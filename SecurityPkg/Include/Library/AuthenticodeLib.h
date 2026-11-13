@@ -29,7 +29,7 @@
   @retval EFI_SUCCESS            AuthImage / AuthImageSize were populated.
   @retval EFI_INVALID_PARAMETER  A required pointer is NULL or FileSize is 0.
   @retval EFI_UNSUPPORTED        FileBuffer is an unsupported image type with no Authenticode form.
-  @retval EFI_VOLUME_CORRUPTED   FileBuffer could not be parsed as a PE/COFF image.
+  @retval EFI_VOLUME_CORRUPTED   The image could not be parsed or is malformed.
   @retval EFI_OUT_OF_RESOURCES   An allocation failed.
 **/
 EFI_STATUS
@@ -49,20 +49,21 @@ BuildAuthenticodeImage (
 
   @param[in]   FileBuffer       In-memory PE/COFF image.
   @param[in]   FileSize         Size of FileBuffer in bytes.
-  @param[out]  WinCertificates  On success, a pointer into FileBuffer to the first WIN_CERTIFICATE,
-                                or NULL when the image carries no certificate table.
+  @param[out]  WinCertificates  On success, a pointer into FileBuffer to the certificate-table
+                                bytes, or NULL when the image carries no certificate table. These
+                                bytes may be unaligned; copy record headers before accessing fields.
   @param[out]  Length           On success, the certificate table length in bytes (0 when the image
                                 carries none).
 
   @retval EFI_SUCCESS            WinCertificates / Length were populated.
   @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
-  @retval EFI_VOLUME_CORRUPTED   FileBuffer could not be parsed as a PE/COFF image.
+  @retval EFI_VOLUME_CORRUPTED   The image could not be parsed or is malformed.
 **/
 EFI_STATUS
 EFIAPI
 GetWinCertificates (
-  IN  CONST VOID             *FileBuffer,
-  IN  UINTN                  FileSize,
-  OUT CONST WIN_CERTIFICATE  **WinCertificates,
-  OUT UINTN                  *Length
+  IN  CONST VOID   *FileBuffer,
+  IN  UINTN        FileSize,
+  OUT CONST UINT8  **WinCertificates,
+  OUT UINTN        *Length
   );

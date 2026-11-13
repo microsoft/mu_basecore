@@ -1,0 +1,31 @@
+## @file
+# Fault-injection tests for AuthenticodeLib.
+#
+# Copyright (C) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = AuthenticodeLibFaultGoogleTest
+  FILE_GUID                      = 277EF572-5829-4B3D-9D80-7F17ECB38777
+  MODULE_TYPE                    = HOST_APPLICATION
+  VERSION_STRING                 = 1.0
+
+[Sources]
+  AuthenticodeLibFaultGoogleTest.cpp
+  AuthenticodeLibInternalTest.c
+  AuthenticodeLibInternalTest.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SecurityPkg/SecurityPkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  BaseMemoryLib
+  DebugLib
+  GoogleTestLib
+  MemoryAllocationLib
+  PeCoffLib
+  SafeIntLib

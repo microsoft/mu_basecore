@@ -41,6 +41,8 @@ Low file offset
     +---------------------------------------------------+
     | Raw section data, e.g. .text                      | Included
     +---------------------------------------------------+
+    | File padding or gaps between sections             | Included
+    +---------------------------------------------------+
     | Raw section data, e.g. .data / .rdata / .reloc    | Included
     +---------------------------------------------------+
     | Extra file data before the certificate table      | Included
@@ -95,7 +97,7 @@ Authenticode image. This buffer is not a loadable PE image.
     | Headers after that entry, through SizeOfHeaders   |
     +---------------------------------------------------+
     | Section raw data in ascending PointerToRawData    |
-    | order, using each section's SizeOfRawData         |
+    | order, including file gaps between sections       |
     +---------------------------------------------------+
     | Remaining file data, excluding certificate table  |
     +---------------------------------------------------+
@@ -107,17 +109,19 @@ The implementation separates this work into three private helpers:
    after `PeCoffLib` has validated the image.
 2. `AppendAuthenticodeHeaders()` copies the headers while skipping the
    checksum and, when present, the Certificate Table directory entry.
-3. `AppendSections()` sorts section headers by `PointerToRawData`
-   and appends each section's `SizeOfRawData` bytes. Sections with no raw
-   data contribute no bytes.
+3. `AppendSections()` sorts nonempty section ranges by `PointerToRawData`
+   and appends their raw data and intervening file gaps in order. Sections
+   with no raw data contribute no section bytes.
+4. `AppendRemainingImageData()` appends remaining file data up to the
+   certificate table, or to the end of an unsigned image.
 
-The public function then appends the remaining file data, omitting the
-trailing certificate table. It calculates the start of this final range as
-`SizeOfHeaders + sum(SizeOfRawData)` and subtracts the certificate-table
-size from the remaining byte count. The diagram depicts the conventional
-layout with contiguous raw sections and a certificate table at the end;
-it is not a promise that arbitrary gaps or a certificate table placed
-elsewhere are handled as additional exclusions.
+The function rejects overlapping section ranges and sections that extend
+into the headers or certificate table. When a certificate table is present,
+it must begin on an 8-byte boundary, be at least `sizeof (WIN_CERTIFICATE)`
+bytes long, and end at the end of the file. Other layouts return
+`EFI_VOLUME_CORRUPTED` rather than producing an ambiguous Authenticode image.
+PE header and section fields are copied into aligned local structures before
+being read, and offsets and lengths are checked against the supplied buffer.
 
 File-alignment padding within `SizeOfRawData` is included. Zero-filled
 virtual memory beyond a section's raw file data is not added: the input is
@@ -128,20 +132,30 @@ the original file, not the loaded image. TE images are unsupported by
 
 - `BuildAuthenticodeImage()` allocates the assembled buffer. The caller must
   release it with `FreePool()` when it is no longer needed.
-- `GetWinCertificates()` returns a borrowed pointer into the original image
-  buffer and the certificate-table length. It returns `NULL` and length
+- `GetWinCertificates()` returns a borrowed byte pointer into the original
+  image buffer and the certificate-table length. It returns `NULL` and length
   zero for an image with no certificate table. Do not free this pointer;
-  keep the original image buffer alive while using it.
+  keep the original image buffer alive while using it. The pointer may be
+  unaligned even if the table's file offset is aligned. The function checks
+  the table range, file-offset alignment, and minimum header size.
 - Certificate records have variable lengths. Walk them using `dwLength`
-  and 8-byte alignment, not array indexing. Locating the table does not
-  validate its signatures.
+  and 8-byte alignment, not array indexing. Copy record headers into aligned
+  storage before accessing their fields, and validate each record against
+  the returned length. Locating the table does not validate its placement,
+  record structure, or signatures.
 
 ## Tests
 
 [`GoogleTest/AuthenticodeLibGoogleTest.cpp`](GoogleTest/AuthenticodeLibGoogleTest.cpp)
 exercises certificate-table lookup and byte-for-byte assembly of signed and
-unsigned PE32/PE32+ images, including section ordering, omitted header fields,
-trailing data, invalid arguments, and malformed input.
+unsigned PE32/PE32+ images, including section ordering, gaps, omitted header
+fields, trailing data, unaligned buffers, truncated images, and malformed
+section and certificate ranges.
+
+[`GoogleTest/AuthenticodeLibFaultGoogleTest.cpp`](GoogleTest/AuthenticodeLibFaultGoogleTest.cpp)
+uses test-only adapters and mocked dependencies to exercise internal buffer
+boundaries, read callbacks, allocation failures, and checked-arithmetic
+failures.
 
 ## References
 

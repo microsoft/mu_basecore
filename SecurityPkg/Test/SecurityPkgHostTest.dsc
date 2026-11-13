@@ -75,6 +75,13 @@
       PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
   }
 
+  SecurityPkg/Library/AuthenticodeLib/GoogleTest/AuthenticodeLibFaultGoogleTest.inf {
+    <LibraryClasses>
+      MemoryAllocationLib|MdePkg/Test/Mock/Library/GoogleTest/MockMemoryAllocationLib/MockMemoryAllocationLib.inf
+      PeCoffLib|MdePkg/Test/Mock/Library/GoogleTest/MockPeCoffLib/MockPeCoffLib.inf
+      SafeIntLib|MdePkg/Test/Mock/Library/GoogleTest/MockSafeIntLib/MockSafeIntLib.inf
+  }
+
 [PcdsPatchableInModule]
   gEfiSecurityPkgTokenSpaceGuid.PcdOptionRomImageVerificationPolicy|0x04
   gEfiSecurityPkgTokenSpaceGuid.PcdRemovableMediaImageVerificationPolicy|0x04

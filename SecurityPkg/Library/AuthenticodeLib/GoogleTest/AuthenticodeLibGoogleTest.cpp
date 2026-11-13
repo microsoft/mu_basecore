@@ -11,6 +11,7 @@
 
 #include <Library/GoogleTestLib.h>
 
+#include <cstring>
 #include <vector>
 #include <tuple>
 
@@ -85,8 +86,8 @@ class GetWinCertificatesTest : public ::testing::Test {
 // ---------------------------------------------------------------------------
 
 TEST_F (GetWinCertificatesTest, NullFileBuffer_ReturnsInvalidParameter) {
-  CONST WIN_CERTIFICATE  *WinCertificates;
-  UINTN                  Length;
+  CONST UINT8  *WinCertificates;
+  UINTN        Length;
 
   EXPECT_EQ (
     GetWinCertificates (NULL, 0x100, &WinCertificates, &Length),
@@ -105,8 +106,8 @@ TEST_F (GetWinCertificatesTest, NullWinCertificates_ReturnsInvalidParameter) {
 }
 
 TEST_F (GetWinCertificatesTest, NullLength_ReturnsInvalidParameter) {
-  std::vector<UINT8>     Image = BuildPe32PlusImage (false);
-  CONST WIN_CERTIFICATE  *WinCertificates;
+  std::vector<UINT8>  Image = BuildPe32PlusImage (false);
+  CONST UINT8         *WinCertificates;
 
   EXPECT_EQ (
     GetWinCertificates (Image.data (), Image.size (), &WinCertificates, NULL),
@@ -120,10 +121,10 @@ TEST_F (GetWinCertificatesTest, NullFileBuffer_DoesNotTouchOutputs) {
   // invalid-parameter return; only the parsing path is allowed to
   // overwrite them.
   //
-  CONST WIN_CERTIFICATE  *WinCertificates;
-  CONST WIN_CERTIFICATE  *ExpectedWinCertificates;
-  UINTN                  Length;
-  UINTN                  ExpectedLength;
+  CONST UINT8  *WinCertificates;
+  CONST UINT8  *ExpectedWinCertificates;
+  UINTN        Length;
+  UINTN        ExpectedLength;
 
   SetMem (&WinCertificates, sizeof (WinCertificates), 0xAA);
   SetMem (&ExpectedWinCertificates, sizeof (ExpectedWinCertificates), 0xAA);
@@ -147,9 +148,9 @@ TEST_F (GetWinCertificatesTest, GarbageBuffer_ReturnsVolumeCorrupted) {
   // A buffer that is large enough to attempt header parsing but does
   // not actually carry valid DOS/NT signatures must be rejected.
   //
-  std::vector<UINT8>     Buffer (kSizeOfImage, 0xAB);
-  CONST WIN_CERTIFICATE  *WinCertificates;
-  UINTN                  Length;
+  std::vector<UINT8>  Buffer (kSizeOfImage, 0xAB);
+  CONST UINT8         *WinCertificates;
+  UINTN               Length;
 
   EXPECT_EQ (
     GetWinCertificates (Buffer.data (), Buffer.size (), &WinCertificates, &Length),
@@ -162,9 +163,9 @@ TEST_F (GetWinCertificatesTest, TinyBuffer_ReturnsVolumeCorrupted) {
   // A buffer too small to contain a DOS header must be rejected
   // without dereferencing any of the bytes.
   //
-  UINT8                  TinyBuffer[4] = { 0 };
-  CONST WIN_CERTIFICATE  *WinCertificates;
-  UINTN                  Length;
+  UINT8        TinyBuffer[4] = { 0 };
+  CONST UINT8  *WinCertificates;
+  UINTN        Length;
 
   EXPECT_EQ (
     GetWinCertificates (TinyBuffer, sizeof (TinyBuffer), &WinCertificates, &Length),
@@ -173,9 +174,9 @@ TEST_F (GetWinCertificatesTest, TinyBuffer_ReturnsVolumeCorrupted) {
 }
 
 TEST_F (GetWinCertificatesTest, ZeroFileSize_ReturnsVolumeCorrupted) {
-  UINT8                  Byte = 0;
-  CONST WIN_CERTIFICATE  *WinCertificates;
-  UINTN                  Length;
+  UINT8        Byte = 0;
+  CONST UINT8  *WinCertificates;
+  UINTN        Length;
 
   EXPECT_EQ (
     GetWinCertificates (&Byte, 0, &WinCertificates, &Length),
@@ -193,8 +194,8 @@ TEST_F (GetWinCertificatesTest, ElfanewPastEof_ReturnsVolumeCorrupted) {
 
   Dos->e_lfanew = (UINT32)(Image.size () + 0x1000);
 
-  CONST WIN_CERTIFICATE  *WinCertificates;
-  UINTN                  Length;
+  CONST UINT8  *WinCertificates;
+  UINTN        Length;
 
   EXPECT_EQ (
     GetWinCertificates (Image.data (), Image.size (), &WinCertificates, &Length),
@@ -211,8 +212,8 @@ TEST_F (GetWinCertificatesTest, TruncatedAtNtHeaders_ReturnsVolumeCorrupted) {
 
   Image.resize (sizeof (EFI_IMAGE_DOS_HEADER));
 
-  CONST WIN_CERTIFICATE  *WinCertificates;
-  UINTN                  Length;
+  CONST UINT8  *WinCertificates;
+  UINTN        Length;
 
   EXPECT_EQ (
     GetWinCertificates (Image.data (), Image.size (), &WinCertificates, &Length),
@@ -230,8 +231,8 @@ TEST_F (GetWinCertificatesTest, ValidDosBadNtSignature_ReturnsVolumeCorrupted) {
 
   Nt->Signature = 0xDEADBEEF;
 
-  CONST WIN_CERTIFICATE  *WinCertificates;
-  UINTN                  Length;
+  CONST UINT8  *WinCertificates;
+  UINTN        Length;
 
   EXPECT_EQ (
     GetWinCertificates (Image.data (), Image.size (), &WinCertificates, &Length),
@@ -244,9 +245,9 @@ TEST_F (GetWinCertificatesTest, ValidDosBadNtSignature_ReturnsVolumeCorrupted) {
 // ---------------------------------------------------------------------------
 
 TEST_F (GetWinCertificatesTest, ValidImageWithoutSecurityDir_ReturnsNoCertificates) {
-  std::vector<UINT8>     Image = BuildPe32PlusImage (false);
-  CONST WIN_CERTIFICATE  *WinCertificates;
-  UINTN                  Length;
+  std::vector<UINT8>  Image = BuildPe32PlusImage (false);
+  CONST UINT8         *WinCertificates;
+  UINTN               Length;
 
   //
   // Pre-poison the outputs so we can prove the function actually wrote
@@ -260,20 +261,20 @@ TEST_F (GetWinCertificatesTest, ValidImageWithoutSecurityDir_ReturnsNoCertificat
     GetWinCertificates (Image.data (), Image.size (), &WinCertificates, &Length),
     EFI_SUCCESS
     );
-  EXPECT_EQ (WinCertificates, (CONST WIN_CERTIFICATE *)NULL);
+  EXPECT_EQ (WinCertificates, (CONST UINT8 *)NULL);
   EXPECT_EQ (Length, (UINTN)0);
 }
 
 TEST_F (GetWinCertificatesTest, ValidImageWithSecurityDir_ReturnsCertificates) {
-  std::vector<UINT8>     Image = BuildPe32PlusImage (true);
-  CONST WIN_CERTIFICATE  *WinCertificates;
-  UINTN                  Length;
+  std::vector<UINT8>  Image = BuildPe32PlusImage (true);
+  CONST UINT8         *WinCertificates;
+  UINTN               Length;
 
   EXPECT_EQ (
     GetWinCertificates (Image.data (), Image.size (), &WinCertificates, &Length),
     EFI_SUCCESS
     );
-  EXPECT_EQ ((CONST UINT8 *)WinCertificates, (CONST UINT8 *)(Image.data () + kSecDirVa));
+  EXPECT_EQ (WinCertificates, Image.data () + kSecDirVa);
   EXPECT_EQ (Length, (UINTN)kSecDirSize);
 }
 
@@ -289,14 +290,14 @@ TEST_F (GetWinCertificatesTest, OtherDataDirectoriesDoNotLeak) {
   Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress = 0xCAFEBABE;
   Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_EXPORT].Size           = 0xBEEFu;
 
-  CONST WIN_CERTIFICATE  *WinCertificates;
-  UINTN                  Length;
+  CONST UINT8  *WinCertificates;
+  UINTN        Length;
 
   EXPECT_EQ (
     GetWinCertificates (Image.data (), Image.size (), &WinCertificates, &Length),
     EFI_SUCCESS
     );
-  EXPECT_EQ ((CONST UINT8 *)WinCertificates, (CONST UINT8 *)(Image.data () + kSecDirVa));
+  EXPECT_EQ (WinCertificates, Image.data () + kSecDirVa);
   EXPECT_EQ (Length, (UINTN)kSecDirSize);
 }
 
@@ -446,6 +447,471 @@ TEST (BuildAuthenticodeImageErrorTest, OverlappingSectionsCannotOverflowOutput) 
   EXPECT_EQ (BuildAuthenticodeImage (Image.data (), Image.size (), &AuthImage, &AuthImageSize), EFI_VOLUME_CORRUPTED);
   EXPECT_EQ (AuthImage, nullptr);
   EXPECT_EQ (AuthImageSize, (UINTN)0);
+}
+
+static std::vector<UINT8>
+ExpectedLinearPeImage (
+  const std::vector<UINT8>  &Image,
+  UINTN                     PeOffset,
+  UINTN                     DataEnd,
+  bool                      Pe32 = false
+  )
+{
+  const UINTN  Checksum = PeOffset + (Pe32
+                                     ? OFFSET_OF (EFI_IMAGE_NT_HEADERS32, OptionalHeader.CheckSum)
+                                     : OFFSET_OF (EFI_IMAGE_NT_HEADERS64, OptionalHeader.CheckSum));
+  const UINTN  Directory = PeOffset + (Pe32
+                                      ? OFFSET_OF (EFI_IMAGE_NT_HEADERS32, OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY])
+                                      : OFFSET_OF (EFI_IMAGE_NT_HEADERS64, OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY]));
+
+  std::vector<UINT8>  Expected (Image.begin (), Image.begin () + Checksum);
+
+  Expected.insert (Expected.end (), Image.begin () + Checksum + sizeof (UINT32), Image.begin () + Directory);
+  Expected.insert (Expected.end (), Image.begin () + Directory + sizeof (EFI_IMAGE_DATA_DIRECTORY), Image.begin () + DataEnd);
+  return Expected;
+}
+
+static void
+ExpectAuthenticodeImage (
+  const UINT8               *Image,
+  UINTN                     ImageSize,
+  const std::vector<UINT8>  &Expected
+  )
+{
+  UINT8  *AuthImage    = NULL;
+  UINTN  AuthImageSize = 0;
+
+  ASSERT_EQ (BuildAuthenticodeImage (Image, ImageSize, &AuthImage, &AuthImageSize), EFI_SUCCESS);
+  ASSERT_NE (AuthImage, nullptr);
+  EXPECT_EQ (AuthImageSize, Expected.size ());
+  if (AuthImageSize == Expected.size ()) {
+    EXPECT_EQ (std::vector<UINT8> (AuthImage, AuthImage + AuthImageSize), Expected);
+  }
+
+  FreePool (AuthImage);
+}
+
+static void
+ExpectCorruptedImage (
+  const std::vector<UINT8>  &Image
+  )
+{
+  UINT8  *AuthImage    = (UINT8 *)(UINTN)1;
+  UINTN  AuthImageSize = 123;
+
+  EXPECT_EQ (BuildAuthenticodeImage (Image.data (), Image.size (), &AuthImage, &AuthImageSize), EFI_VOLUME_CORRUPTED);
+  EXPECT_EQ (AuthImage, nullptr);
+  EXPECT_EQ (AuthImageSize, (UINTN)0);
+}
+
+static void
+ExpectInvalidCertificateTable (
+  const std::vector<UINT8>  &Image
+  )
+{
+  CONST UINT8  *Certificates = (CONST UINT8 *)(UINTN)1;
+  UINTN        Length        = 123;
+
+  EXPECT_EQ (GetWinCertificates (Image.data (), Image.size (), &Certificates, &Length), EFI_VOLUME_CORRUPTED);
+  EXPECT_EQ (Certificates, nullptr);
+  EXPECT_EQ (Length, (UINTN)0);
+}
+
+static std::vector<UINT8>
+BuildGappedPeImage (
+  bool  Pe32,
+  bool  Signed
+  )
+{
+  std::vector<UINT8>  Image = BuildPe32PlusImage (false);
+
+  Image.resize (Signed ? 0xA80 : 0xA00, 0);
+  UINTN  SectionTableOffset;
+
+  if (Pe32) {
+    EFI_IMAGE_NT_HEADERS32  *Nt = (EFI_IMAGE_NT_HEADERS32 *)(Image.data () + kPeCoffOffset);
+
+    ZeroMem (Nt, sizeof (*Nt));
+    Nt->Signature                          = EFI_IMAGE_NT_SIGNATURE;
+    Nt->FileHeader.Machine                 = IMAGE_FILE_MACHINE_I386;
+    Nt->FileHeader.NumberOfSections        = 2;
+    Nt->FileHeader.SizeOfOptionalHeader    = sizeof (EFI_IMAGE_OPTIONAL_HEADER32);
+    Nt->OptionalHeader.Magic               = EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC;
+    Nt->OptionalHeader.SizeOfImage         = 0x2000;
+    Nt->OptionalHeader.SizeOfHeaders       = kSizeOfHeaders;
+    Nt->OptionalHeader.SectionAlignment    = 0x200;
+    Nt->OptionalHeader.FileAlignment       = 0x200;
+    Nt->OptionalHeader.NumberOfRvaAndSizes = EFI_IMAGE_NUMBER_OF_DIRECTORY_ENTRIES;
+    if (Signed) {
+      Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress = 0xA00;
+      Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].Size           = 0x80;
+    }
+
+    SectionTableOffset = kPeCoffOffset + sizeof (*Nt);
+  } else {
+    EFI_IMAGE_NT_HEADERS64  *Nt = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+
+    Nt->FileHeader.NumberOfSections  = 2;
+    Nt->OptionalHeader.SizeOfImage   = 0x2000;
+    Nt->OptionalHeader.FileAlignment = 0x200;
+    if (Signed) {
+      Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress = 0xA00;
+      Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].Size           = 0x80;
+    }
+
+    SectionTableOffset = kPeCoffOffset + sizeof (*Nt);
+  }
+
+  EFI_IMAGE_SECTION_HEADER  *Sections = (EFI_IMAGE_SECTION_HEADER *)(Image.data () + SectionTableOffset);
+
+  Sections[0].VirtualAddress   = 0x400;
+  Sections[0].PointerToRawData = 0x600;
+  Sections[0].SizeOfRawData    = 0x200;
+  Sections[1].VirtualAddress   = 0x200;
+  Sections[1].PointerToRawData = 0x200;
+  Sections[1].SizeOfRawData    = 0x200;
+  for (UINTN Index = kSizeOfHeaders; Index < Image.size (); Index++) {
+    Image[Index] = (UINT8)(Index * 29 + (Index >> 8));
+  }
+
+  return Image;
+}
+
+class GappedImageTest : public ::testing::TestWithParam<std::tuple<bool, bool> > {
+};
+
+TEST_P (GappedImageTest, IncludesEachGapAndSectionExactlyOnce) {
+  const bool          Pe32    = std::get<0> (GetParam ());
+  const bool          Signed  = std::get<1> (GetParam ());
+  std::vector<UINT8>  Image   = BuildGappedPeImage (Pe32, Signed);
+  const UINTN         DataEnd = Signed ? 0xA00 : Image.size ();
+
+  ExpectAuthenticodeImage (Image.data (), Image.size (), ExpectedLinearPeImage (Image, kPeCoffOffset, DataEnd, Pe32));
+  Image[0x450] ^= 0x5A;
+  ExpectAuthenticodeImage (Image.data (), Image.size (), ExpectedLinearPeImage (Image, kPeCoffOffset, DataEnd, Pe32));
+}
+
+INSTANTIATE_TEST_SUITE_P (Pe32AndPe32Plus, GappedImageTest, ::testing::Combine (::testing::Bool (), ::testing::Bool ()));
+
+class DirectoryCountTest : public ::testing::TestWithParam<UINT32> {
+};
+
+TEST_P (DirectoryCountTest, IncludesOnlyDeclaredHeaderFields) {
+  std::vector<UINT8>      Image = BuildPe32PlusImage (false);
+  EFI_IMAGE_NT_HEADERS64  *Nt   = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+  const UINT32            Count = GetParam ();
+
+  Nt->FileHeader.NumberOfSections        = 0;
+  Nt->OptionalHeader.NumberOfRvaAndSizes = Count;
+  Nt->FileHeader.SizeOfOptionalHeader    = (UINT16)(OFFSET_OF (EFI_IMAGE_OPTIONAL_HEADER64, DataDirectory) + Count * sizeof (EFI_IMAGE_DATA_DIRECTORY));
+
+  std::vector<UINT8>  Expected;
+
+  if (Count > EFI_IMAGE_DIRECTORY_ENTRY_SECURITY) {
+    Expected = ExpectedLinearPeImage (Image, kPeCoffOffset, Image.size ());
+  } else {
+    const UINTN  Checksum = kPeCoffOffset + OFFSET_OF (EFI_IMAGE_NT_HEADERS64, OptionalHeader.CheckSum);
+
+    Expected.assign (Image.begin (), Image.begin () + Checksum);
+    Expected.insert (Expected.end (), Image.begin () + Checksum + sizeof (UINT32), Image.end ());
+  }
+
+  ExpectAuthenticodeImage (Image.data (), Image.size (), Expected);
+}
+
+INSTANTIATE_TEST_SUITE_P (DirectoryBoundaries, DirectoryCountTest, ::testing::Values (0U, 1U, 4U, 5U, 16U));
+
+TEST (BuildAuthenticodeImageErrorTest, RejectsDirectoryCountBeyondPeLimit) {
+  std::vector<UINT8>      Image = BuildPe32PlusImage (false);
+  EFI_IMAGE_NT_HEADERS64  *Nt   = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+
+  Nt->OptionalHeader.NumberOfRvaAndSizes = EFI_IMAGE_NUMBER_OF_DIRECTORY_ENTRIES + 1;
+  ExpectCorruptedImage (Image);
+}
+
+TEST (BuildAuthenticodeImageErrorTest, RejectsNonTrailingCertificateTable) {
+  std::vector<UINT8>      Image = BuildPe32PlusImage (true);
+  EFI_IMAGE_NT_HEADERS64  *Nt   = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+
+  Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].Size = 0x80;
+  ExpectCorruptedImage (Image);
+}
+
+TEST (BuildAuthenticodeImageErrorTest, RejectsCertificateTableInsideHeaders) {
+  std::vector<UINT8>      Image = BuildPe32PlusImage (true);
+  EFI_IMAGE_NT_HEADERS64  *Nt   = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+
+  Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress = 0x180;
+  Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].Size           = 0x280;
+  ExpectCorruptedImage (Image);
+}
+
+TEST (BuildAuthenticodeImageErrorTest, RejectsUnalignedCertificateTable) {
+  std::vector<UINT8>      Image = BuildPe32PlusImage (true);
+  EFI_IMAGE_NT_HEADERS64  *Nt   = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+
+  Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress = 0x301;
+  Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].Size           = 0xFF;
+  ExpectCorruptedImage (Image);
+  ExpectInvalidCertificateTable (Image);
+}
+
+TEST (BuildAuthenticodeImageErrorTest, RejectsShortCertificateTable) {
+  std::vector<UINT8>  Image = BuildPe32PlusImage (true);
+
+  Image.resize (0x3FC);
+  EFI_IMAGE_NT_HEADERS64  *Nt = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+
+  Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress = 0x3F8;
+  Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].Size           = 4;
+  ExpectCorruptedImage (Image);
+  ExpectInvalidCertificateTable (Image);
+}
+
+TEST (BuildAuthenticodeImageErrorTest, RejectsSectionOverlappingCertificateTable) {
+  std::vector<UINT8>        Image     = BuildPe32PlusImage (true);
+  EFI_IMAGE_NT_HEADERS64    *Nt       = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+  EFI_IMAGE_SECTION_HEADER  *Sections = (EFI_IMAGE_SECTION_HEADER *)(Image.data () + kPeCoffOffset + sizeof (*Nt));
+
+  Sections[0].VirtualAddress   = kSizeOfHeaders;
+  Sections[0].PointerToRawData = 0x280;
+  Sections[0].SizeOfRawData    = 0x100;
+  ExpectCorruptedImage (Image);
+}
+
+TEST (BuildAuthenticodeImageErrorTest, RejectsOverlapEvenWhenOutputWouldFit) {
+  std::vector<UINT8>        Image     = BuildPe32PlusImage (false);
+  EFI_IMAGE_NT_HEADERS64    *Nt       = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+  EFI_IMAGE_SECTION_HEADER  *Sections = (EFI_IMAGE_SECTION_HEADER *)(Image.data () + kPeCoffOffset + sizeof (*Nt));
+
+  Nt->FileHeader.NumberOfSections = 2;
+  for (UINTN Index = 0; Index < 2; Index++) {
+    Sections[Index].VirtualAddress   = kSizeOfHeaders + (UINT32)Index * 0x100;
+    Sections[Index].PointerToRawData = kSizeOfHeaders + (UINT32)Index * 0x40;
+    Sections[Index].SizeOfRawData    = 0x80;
+  }
+
+  ExpectCorruptedImage (Image);
+}
+
+TEST (BuildAuthenticodeImageErrorTest, RejectsDuplicateSectionRanges) {
+  std::vector<UINT8>        Image     = BuildPe32PlusImage (false);
+  EFI_IMAGE_NT_HEADERS64    *Nt       = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+  EFI_IMAGE_SECTION_HEADER  *Sections = (EFI_IMAGE_SECTION_HEADER *)(Image.data () + kPeCoffOffset + sizeof (*Nt));
+
+  Nt->FileHeader.NumberOfSections = 2;
+  for (UINTN Index = 0; Index < 2; Index++) {
+    Sections[Index].VirtualAddress   = kSizeOfHeaders + (UINT32)Index * 0x100;
+    Sections[Index].PointerToRawData = kSizeOfHeaders;
+    Sections[Index].SizeOfRawData    = 0x80;
+  }
+
+  ExpectCorruptedImage (Image);
+}
+
+TEST (BuildAuthenticodeImageErrorTest, RejectsSectionWhoseRawDataExceedsFile) {
+  std::vector<UINT8>        Image     = BuildPe32PlusImage (false);
+  EFI_IMAGE_NT_HEADERS64    *Nt       = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+  EFI_IMAGE_SECTION_HEADER  *Sections = (EFI_IMAGE_SECTION_HEADER *)(Image.data () + kPeCoffOffset + sizeof (*Nt));
+
+  Sections[0].VirtualAddress   = kSizeOfHeaders;
+  Sections[0].PointerToRawData = 0x3F0;
+  Sections[0].SizeOfRawData    = 0x20;
+  ExpectCorruptedImage (Image);
+}
+
+TEST (BuildAuthenticodeImageErrorTest, RejectsSectionRawRangeOverflow) {
+  std::vector<UINT8>        Image     = BuildPe32PlusImage (false);
+  EFI_IMAGE_NT_HEADERS64    *Nt       = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+  EFI_IMAGE_SECTION_HEADER  *Sections = (EFI_IMAGE_SECTION_HEADER *)(Image.data () + kPeCoffOffset + sizeof (*Nt));
+
+  Sections[0].VirtualAddress   = kSizeOfHeaders;
+  Sections[0].PointerToRawData = MAX_UINT32 - 7;
+  Sections[0].SizeOfRawData    = 16;
+  ExpectCorruptedImage (Image);
+}
+
+TEST (BuildAuthenticodeImageTest, EmptySectionDoesNotReadItsRawOffset) {
+  std::vector<UINT8>        Image     = BuildPe32PlusImage (false);
+  EFI_IMAGE_NT_HEADERS64    *Nt       = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+  EFI_IMAGE_SECTION_HEADER  *Sections = (EFI_IMAGE_SECTION_HEADER *)(Image.data () + kPeCoffOffset + sizeof (*Nt));
+
+  Sections[0].PointerToRawData = MAX_UINT32;
+  Sections[0].SizeOfRawData    = 0;
+  ExpectAuthenticodeImage (Image.data (), Image.size (), ExpectedLinearPeImage (Image, kPeCoffOffset, Image.size ()));
+}
+
+TEST (BuildAuthenticodeImageTest, AcceptsHeadersEndingAtEndOfUnsignedFile) {
+  std::vector<UINT8>  Image = BuildPe32PlusImage (false);
+
+  Image.resize (kSizeOfHeaders);
+  EFI_IMAGE_NT_HEADERS64  *Nt = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+
+  Nt->FileHeader.NumberOfSections = 0;
+  ExpectAuthenticodeImage (Image.data (), Image.size (), ExpectedLinearPeImage (Image, kPeCoffOffset, Image.size ()));
+}
+
+TEST (BuildAuthenticodeImageTest, AcceptsMinimumSizedTrailingCertificateTable) {
+  std::vector<UINT8>      Image = BuildPe32PlusImage (true);
+  EFI_IMAGE_NT_HEADERS64  *Nt   = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+
+  Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress = 0x3F8;
+  Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].Size           = sizeof (WIN_CERTIFICATE);
+  ExpectAuthenticodeImage (Image.data (), Image.size (), ExpectedLinearPeImage (Image, kPeCoffOffset, 0x3F8));
+
+  CONST UINT8  *Certificates = NULL;
+  UINTN        Length        = 0;
+
+  ASSERT_EQ (GetWinCertificates (Image.data (), Image.size (), &Certificates, &Length), EFI_SUCCESS);
+  EXPECT_EQ (Certificates, Image.data () + 0x3F8);
+  EXPECT_EQ (Length, sizeof (WIN_CERTIFICATE));
+}
+
+TEST (BuildAuthenticodeImageTest, AcceptsUnalignedImageBuffer) {
+  std::vector<UINT8>  Image = BuildPe32PlusImage (true);
+  std::vector<UINT8>  Unaligned (Image.size () + 1);
+  WIN_CERTIFICATE     Header          = { kSecDirSize, 0x0200, WIN_CERT_TYPE_PKCS_SIGNED_DATA };
+  const UINTN         Offset          = ((UINTN)Unaligned.data () % ALIGNOF (WIN_CERTIFICATE) == 0) ? 1 : 0;
+  CONST UINT8         *UnalignedImage = Unaligned.data () + Offset;
+
+  ASSERT_NE ((UINTN)UnalignedImage % ALIGNOF (WIN_CERTIFICATE), (UINTN)0);
+  CopyMem (Image.data () + kSecDirVa, &Header, sizeof (Header));
+  CopyMem (Unaligned.data () + Offset, Image.data (), Image.size ());
+  ExpectAuthenticodeImage (UnalignedImage, Image.size (), ExpectedLinearPeImage (Image, kPeCoffOffset, kSecDirVa));
+
+  CONST UINT8  *Certificates = NULL;
+  UINTN        Length        = 0;
+
+  ASSERT_EQ (GetWinCertificates (UnalignedImage, Image.size (), &Certificates, &Length), EFI_SUCCESS);
+  EXPECT_EQ (Certificates, UnalignedImage + kSecDirVa);
+  EXPECT_EQ (Length, (UINTN)kSecDirSize);
+
+  WIN_CERTIFICATE  CopiedHeader;
+
+  CopyMem (&CopiedHeader, Certificates, sizeof (CopiedHeader));
+  EXPECT_EQ (CopiedHeader.dwLength, Header.dwLength);
+  EXPECT_EQ (CopiedHeader.wRevision, Header.wRevision);
+  EXPECT_EQ (CopiedHeader.wCertificateType, Header.wCertificateType);
+}
+
+TEST (BuildAuthenticodeImageTest, AcceptsUnalignedPeHeaderOffset) {
+  std::vector<UINT8>      Image = BuildPe32PlusImage (false);
+  EFI_IMAGE_NT_HEADERS64  *Nt   = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+  EFI_IMAGE_DOS_HEADER    *Dos  = (EFI_IMAGE_DOS_HEADER *)Image.data ();
+
+  std::memmove (Image.data () + kPeCoffOffset + 1, Image.data () + kPeCoffOffset, sizeof (*Nt) + sizeof (EFI_IMAGE_SECTION_HEADER));
+  Dos->e_lfanew = kPeCoffOffset + 1;
+  ExpectAuthenticodeImage (Image.data (), Image.size (), ExpectedLinearPeImage (Image, kPeCoffOffset + 1, Image.size ()));
+}
+
+class NoDosHeaderTest : public ::testing::TestWithParam<bool> {
+};
+
+TEST_P (NoDosHeaderTest, AcceptsPeHeaderAtFileStart) {
+  const bool          Signed = GetParam ();
+  std::vector<UINT8>  Image  = BuildPe32PlusImage (Signed);
+
+  std::memmove (Image.data (), Image.data () + kPeCoffOffset, sizeof (EFI_IMAGE_NT_HEADERS64) + sizeof (EFI_IMAGE_SECTION_HEADER));
+  const UINTN  DataEnd = Signed ? kSecDirVa : Image.size ();
+
+  ExpectAuthenticodeImage (Image.data (), Image.size (), ExpectedLinearPeImage (Image, 0, DataEnd));
+}
+
+INSTANTIATE_TEST_SUITE_P (SignedAndUnsigned, NoDosHeaderTest, ::testing::Bool ());
+
+TEST (BuildAuthenticodeImageErrorTest, RejectsEveryTruncatedSignedImageWithoutReadingPastBuffer) {
+  const std::vector<UINT8>  Image = BuildPe32PlusImage (true);
+
+  for (UINTN Length = 0; Length < Image.size (); Length++) {
+    std::vector<UINT8>  Truncated (Length == 0 ? 1 : Length);
+    if (Length != 0) {
+      CopyMem (Truncated.data (), Image.data (), Length);
+    }
+
+    UINT8  *AuthImage    = (UINT8 *)(UINTN)1;
+    UINTN  AuthImageSize = 123;
+
+    EXPECT_EQ (
+      BuildAuthenticodeImage (Truncated.data (), Length, &AuthImage, &AuthImageSize),
+      Length == 0 ? EFI_INVALID_PARAMETER : EFI_VOLUME_CORRUPTED
+      ) << "truncated length " << Length;
+    if (Length != 0) {
+      EXPECT_EQ (AuthImage, nullptr);
+      EXPECT_EQ (AuthImageSize, (UINTN)0);
+    }
+
+    CONST UINT8  *Certificates     = (CONST UINT8 *)(UINTN)1;
+    UINTN        CertificateLength = 123;
+
+    EXPECT_EQ (GetWinCertificates (Truncated.data (), Length, &Certificates, &CertificateLength), EFI_VOLUME_CORRUPTED)
+    << "truncated length " << Length;
+    EXPECT_EQ (Certificates, nullptr);
+    EXPECT_EQ (CertificateLength, (UINTN)0);
+  }
+}
+
+TEST_F (GetWinCertificatesTest, LocatesNonTrailingTableWithoutValidatingPlacement) {
+  std::vector<UINT8>      Image = BuildPe32PlusImage (true);
+  EFI_IMAGE_NT_HEADERS64  *Nt   = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+
+  Nt->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY].Size = 0x80;
+  CONST UINT8  *Certificates = NULL;
+  UINTN        Length        = 0;
+
+  ASSERT_EQ (GetWinCertificates (Image.data (), Image.size (), &Certificates, &Length), EFI_SUCCESS);
+  EXPECT_EQ (Certificates, Image.data () + kSecDirVa);
+  EXPECT_EQ (Length, (UINTN)0x80);
+}
+
+static std::vector<UINT8>
+BuildManySectionsImage (
+  UINT16  Count,
+  bool    Empty,
+  bool    MixedOrder
+  )
+{
+  const UINT32  HeadersSize = (UINT32)((kPeCoffOffset + sizeof (EFI_IMAGE_NT_HEADERS64) + Count * sizeof (EFI_IMAGE_SECTION_HEADER) + 0x1FF) & ~(UINTN)0x1FF);
+  const UINT32  DataSize    = Empty ? 0x200 : Count * 8;
+
+  std::vector<UINT8>  Image = BuildPe32PlusImage (false);
+
+  Image.resize (HeadersSize + DataSize, 0);
+  EFI_IMAGE_NT_HEADERS64    *Nt       = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+  EFI_IMAGE_SECTION_HEADER  *Sections = (EFI_IMAGE_SECTION_HEADER *)(Image.data () + kPeCoffOffset + sizeof (*Nt));
+
+  Nt->FileHeader.NumberOfSections  = Count;
+  Nt->OptionalHeader.SizeOfHeaders = HeadersSize;
+  Nt->OptionalHeader.SizeOfImage   = HeadersSize + DataSize + 0x1000;
+  for (UINTN Index = 0; Index < Count; Index++) {
+    Sections[Index].VirtualAddress = HeadersSize + (UINT32)Index * 8;
+    const UINT32  Slot = MixedOrder ? ((UINT32)Index * 73 + 19) % Count : Count - (UINT32)Index - 1;
+
+    Sections[Index].PointerToRawData = Empty ? (Count - (UINT32)Index) : HeadersSize + Slot * 8;
+    Sections[Index].SizeOfRawData    = Empty ? 0 : 8;
+  }
+
+  for (UINTN Index = HeadersSize; Index < Image.size (); Index++) {
+    Image[Index] = (UINT8)(Index * 31 + (Index >> 8));
+  }
+
+  return Image;
+}
+
+class ManySectionsTest : public ::testing::TestWithParam<bool> {
+};
+
+TEST_P (ManySectionsTest, HandlesReverseOrderedOrEmptySections) {
+  std::vector<UINT8>  Image = BuildManySectionsImage (4000, GetParam (), false);
+
+  ExpectAuthenticodeImage (Image.data (), Image.size (), ExpectedLinearPeImage (Image, kPeCoffOffset, Image.size ()));
+}
+
+INSTANTIATE_TEST_SUITE_P (EmptyAndNonempty, ManySectionsTest, ::testing::Bool ());
+
+TEST (SectionSortingTest, HandlesMixedSectionOrder) {
+  std::vector<UINT8>  Image = BuildManySectionsImage (127, false, true);
+
+  ExpectAuthenticodeImage (Image.data (), Image.size (), ExpectedLinearPeImage (Image, kPeCoffOffset, Image.size ()));
 }
 
 int
