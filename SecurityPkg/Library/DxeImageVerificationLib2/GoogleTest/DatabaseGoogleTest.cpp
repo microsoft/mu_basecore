@@ -1070,6 +1070,40 @@ TEST (IsImageHashInRevokeListTest, MalformedTail_FailsClosed) {
 // IsTbsHashInRevokeList (X.509 TBS-cert-hash lists)
 // ---------------------------------------------------------------------------
 
+TEST (IsImageHashInRevokeListTest, InvalidHashEntrySizes_FailClosed) {
+  MockBaseCryptLib  BaseCryptLibMock;
+  CONST EFI_GUID    *Types[] = {
+    &gEfiCertSha256Guid,
+    &gEfiCertV2Sha256Guid,
+    &gEfiCertX509Sha256Guid,
+    &gEfiCertV2X509Sha256Guid
+  };
+  CONST UINT32      EntrySizes[] = {
+    kSha256EntrySize,
+    kSha256V2EntrySize,
+    kSha256TbsV1EntrySize,
+    kSha256V2EntrySize
+  };
+  DIGEST_CACHE      Cache;
+
+  InitImageCache (Cache);
+  EXPECT_CALL (BaseCryptLibMock, HashAllByGuid (_, _, _, _, _)).Times (0);
+
+  for (UINTN Index = 0; Index < ARRAY_SIZE (Types); Index++) {
+    for (UINT32 Size : { (UINT32)sizeof (EFI_GUID), EntrySizes[Index] - 1, EntrySizes[Index] + 1 }) {
+      for (UINT32 Count : { 0U, 1U }) {
+        std::vector<UINT8>  Dbx;
+
+        AppendSignatureList (Dbx, *Types[Index], 0, Size, Count);
+        EXPECT_TRUE (IsImageHashInRevokeList (&Cache, Dbx.data (), Dbx.size ()));
+        EXPECT_TRUE (IsTbsHashInRevokeList (&Cache, Dbx.data (), Dbx.size ()));
+        EXPECT_FALSE (IsImageHashInAllowList (&Cache, Dbx.data (), Dbx.size ()));
+        EXPECT_FALSE (IsTbsHashInAllowList (&Cache, Dbx.data (), Dbx.size ()));
+      }
+    }
+  }
+}
+
 //
 // An EFI_CERT_X509_SHA256 revoke-list whose entry holds the subject's TBS hash marks it revoked.
 //
@@ -2060,6 +2094,84 @@ TEST (EvaluateSignatureTest, V2X509HashListResolvesAnchor_Allowed) {
     );
   EXPECT_EQ (Eval.Verdict, ImageSignatureAllowed);
   EXPECT_NE (Eval.Authority.Data, nullptr);
+}
+
+TEST (EvaluateSignatureTest, TbsHashSizeDoesNotSelectAnotherAlgorithm) {
+  CONST EFI_GUID  *Types[] = {
+    &gEfiCertX509Sha256Guid,
+    &gEfiCertV2X509Sha256Guid,
+    &gEfiCertX509Sha384Guid,
+    &gEfiCertV2X509Sha384Guid,
+    &gEfiCertX509Sha512Guid,
+    &gEfiCertV2X509Sha512Guid
+  };
+  CONST UINT32    DigestSizes[] = { 32, 32, 48, 48, 64, 64 };
+
+  for (UINTN Index = 0; Index < ARRAY_SIZE (Types); Index++) {
+    for (UINT32 DigestSize : { 20U, 32U, 48U, 64U }) {
+      if (DigestSize == DigestSizes[Index]) {
+        continue;
+      }
+
+      MockBaseCryptLib            BaseCryptLibMock;
+      DIGEST_CACHE                Cache;
+      IMAGE_SIGNATURE_EVALUATION  Eval = { };
+      std::vector<UINT8>          Db;
+      UINT32                      EntrySize = DigestSize;
+
+      if ((Index % 2) == 0) {
+        EntrySize += sizeof (EFI_GUID) + sizeof (EFI_TIME);
+      }
+
+      AppendSignatureList (Db, *Types[Index], 0, EntrySize, 1);
+      SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
+
+      InitImageCache (Cache);
+      ExpectSignedImagePrelude (BaseCryptLibMock);
+      EXPECT_CALL (BaseCryptLibMock, GetTrustAnchorX509FromAuthData (_, _, _, _, _, _, _)).Times (0);
+      EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
+      EXPECT_EQ (
+        EvaluateSignature (kSignatureDataDefault.data (), kSignatureDataDefault.size (), &Cache, &Lists, &Eval),
+        EFI_SUCCESS
+        );
+      EXPECT_EQ (Eval.Verdict, ImageSignatureNotAuthorized);
+      EXPECT_EQ (Eval.Authority.Data, nullptr);
+      FreeDigestCache (&Cache);
+    }
+  }
+}
+
+TEST (EvaluateSignatureTest, AuthorityConstructionFailure_ReturnsError) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  IMAGE_SIGNATURE_EVALUATION  Eval = { };
+  std::vector<UINT8>          Db;
+
+  AppendSignatureList (Db, gEfiCertV2X509Sha256Guid, 0, kSha256V2EntrySize, 1);
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
+
+  InitImageCache (Cache);
+  ExpectSignedImagePrelude (BaseCryptLibMock);
+  EXPECT_CALL (BaseCryptLibMock, GetTrustAnchorX509FromAuthData (_, _, _, _, _, _, _))
+    .WillOnce (
+       Invoke (
+         [] (VOID **, CONST UINT8 *, UINTN, CONST UINT8 *, UINTN, UINT8 **Anchor, UINTN *AnchorSize) -> EFI_STATUS {
+    *Anchor     = (UINT8 *)AllocateZeroPool (1);
+    *AnchorSize = MAX_UINTN;
+    return EFI_SUCCESS;
+  }
+         )
+       );
+  EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _))
+    .WillOnce (Return (EFI_SUCCESS));
+
+  EXPECT_EQ (
+    EvaluateSignature (kSignatureDataDefault.data (), kSignatureDataDefault.size (), &Cache, &Lists, &Eval),
+    EFI_INVALID_PARAMETER
+    );
+  EXPECT_NE (Eval.Verdict, ImageSignatureAllowed);
+  EXPECT_EQ (Eval.Authority.Data, nullptr);
+  FreeDigestCache (&Cache);
 }
 
 //

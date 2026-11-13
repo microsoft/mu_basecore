@@ -460,6 +460,17 @@ TEST (WinCertIterInitTest, EntryDwLengthOverrunsRemaining_TruncatesToEmpty) {
   EXPECT_EQ (WinCertIterNext (&Iter), nullptr);
 }
 
+TEST (WinCertIterInitTest, EntryAlignmentOverflowsUint32_TruncatesToEmpty) {
+  for (UINT32 Padding = 0; Padding < 7; Padding++) {
+    WIN_CERTIFICATE  Cert = { MAX_UINT32 - Padding, 0x0200, WIN_CERT_TYPE_PKCS_SIGNED_DATA };
+    WIN_CERT_ITER    Iter;
+
+    EXPECT_FALSE (WinCertIterInit (&Iter, &Cert, Cert.dwLength));
+    EXPECT_EQ (Iter.Remaining, (UINTN)0);
+    EXPECT_EQ (WinCertIterNext (&Iter), nullptr);
+  }
+}
+
 TEST (WinCertIterInitTest, WellFormedEntries_NotTruncated) {
   std::vector<UINT8>  Dir;
 

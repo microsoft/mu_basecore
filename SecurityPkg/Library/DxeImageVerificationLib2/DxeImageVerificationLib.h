@@ -48,12 +48,14 @@
 // One supported signature-list type for the database visitors: its EFI_SIGNATURE_LIST SignatureType,
 // the algorithm its entries are hashed under (NULL for a full-certificate type, which carries a DER
 // certificate rather than a digest), and the per-entry SignatureOwner size (sizeof (EFI_GUID) for a
-// V1 EFI_SIGNATURE_DATA type, 0 for a V2 EFI_SIGNATURE_V2_DATA type).
+// V1 EFI_SIGNATURE_DATA type, 0 for a V2 EFI_SIGNATURE_V2_DATA type), and digest size
+// (0 for a full-certificate type).
 //
 typedef struct {
   CONST EFI_GUID    *SignatureType;
   CONST EFI_GUID    *HashAlgorithm;
   UINTN             OwnerSize;
+  UINTN             DigestSize;
 } SIGNATURE_TYPE_MAP;
 
 //
@@ -61,12 +63,12 @@ typedef struct {
 // match, each mapped to its hash algorithm and owner size.
 //
 GLOBAL_REMOVE_IF_UNREFERENCED STATIC CONST SIGNATURE_TYPE_MAP  mImageHashSignatures[] = {
-  { &gEfiCertSha256Guid,   &gEfiHashAlgorithmSha256Guid, sizeof (EFI_GUID) },
-  { &gEfiCertV2Sha256Guid, &gEfiHashAlgorithmSha256Guid, 0                 },
-  { &gEfiCertSha384Guid,   &gEfiHashAlgorithmSha384Guid, sizeof (EFI_GUID) },
-  { &gEfiCertV2Sha384Guid, &gEfiHashAlgorithmSha384Guid, 0                 },
-  { &gEfiCertSha512Guid,   &gEfiHashAlgorithmSha512Guid, sizeof (EFI_GUID) },
-  { &gEfiCertV2Sha512Guid, &gEfiHashAlgorithmSha512Guid, 0                 },
+  { &gEfiCertSha256Guid,   &gEfiHashAlgorithmSha256Guid, sizeof (EFI_GUID), SHA256_DIGEST_SIZE },
+  { &gEfiCertV2Sha256Guid, &gEfiHashAlgorithmSha256Guid, 0,                 SHA256_DIGEST_SIZE },
+  { &gEfiCertSha384Guid,   &gEfiHashAlgorithmSha384Guid, sizeof (EFI_GUID), SHA384_DIGEST_SIZE },
+  { &gEfiCertV2Sha384Guid, &gEfiHashAlgorithmSha384Guid, 0,                 SHA384_DIGEST_SIZE },
+  { &gEfiCertSha512Guid,   &gEfiHashAlgorithmSha512Guid, sizeof (EFI_GUID), SHA512_DIGEST_SIZE },
+  { &gEfiCertV2Sha512Guid, &gEfiHashAlgorithmSha512Guid, 0,                 SHA512_DIGEST_SIZE },
 };
 
 //
@@ -74,12 +76,12 @@ GLOBAL_REMOVE_IF_UNREFERENCED STATIC CONST SIGNATURE_TYPE_MAP  mImageHashSignatu
 // hash-membership search may match.
 //
 GLOBAL_REMOVE_IF_UNREFERENCED STATIC CONST SIGNATURE_TYPE_MAP  mTbsHashSignatures[] = {
-  { &gEfiCertX509Sha256Guid,   &gEfiHashAlgorithmSha256Guid, sizeof (EFI_GUID) },
-  { &gEfiCertV2X509Sha256Guid, &gEfiHashAlgorithmSha256Guid, 0                 },
-  { &gEfiCertX509Sha384Guid,   &gEfiHashAlgorithmSha384Guid, sizeof (EFI_GUID) },
-  { &gEfiCertV2X509Sha384Guid, &gEfiHashAlgorithmSha384Guid, 0                 },
-  { &gEfiCertX509Sha512Guid,   &gEfiHashAlgorithmSha512Guid, sizeof (EFI_GUID) },
-  { &gEfiCertV2X509Sha512Guid, &gEfiHashAlgorithmSha512Guid, 0                 },
+  { &gEfiCertX509Sha256Guid,   &gEfiHashAlgorithmSha256Guid, sizeof (EFI_GUID), SHA256_DIGEST_SIZE },
+  { &gEfiCertV2X509Sha256Guid, &gEfiHashAlgorithmSha256Guid, 0,                 SHA256_DIGEST_SIZE },
+  { &gEfiCertX509Sha384Guid,   &gEfiHashAlgorithmSha384Guid, sizeof (EFI_GUID), SHA384_DIGEST_SIZE },
+  { &gEfiCertV2X509Sha384Guid, &gEfiHashAlgorithmSha384Guid, 0,                 SHA384_DIGEST_SIZE },
+  { &gEfiCertX509Sha512Guid,   &gEfiHashAlgorithmSha512Guid, sizeof (EFI_GUID), SHA512_DIGEST_SIZE },
+  { &gEfiCertV2X509Sha512Guid, &gEfiHashAlgorithmSha512Guid, 0,                 SHA512_DIGEST_SIZE },
 };
 
 //
@@ -88,8 +90,8 @@ GLOBAL_REMOVE_IF_UNREFERENCED STATIC CONST SIGNATURE_TYPE_MAP  mTbsHashSignature
 // DER certificate rather than a digest, so they are never hashed.
 //
 GLOBAL_REMOVE_IF_UNREFERENCED STATIC CONST SIGNATURE_TYPE_MAP  mX509CertSignatures[] = {
-  { &gEfiCertX509Guid,   NULL, sizeof (EFI_GUID) },
-  { &gEfiCertV2X509Guid, NULL, 0                 },
+  { &gEfiCertX509Guid,   NULL, sizeof (EFI_GUID), 0 },
+  { &gEfiCertV2X509Guid, NULL, 0,                 0 },
 };
 
 //

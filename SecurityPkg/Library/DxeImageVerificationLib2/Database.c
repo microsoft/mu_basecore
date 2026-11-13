@@ -8,6 +8,7 @@
 **/
 
 #include "Database.h"
+#include <Library/SafeIntLib.h>
 
 //
 // Iterator state for walking EFI_SIGNATURE_LIST records inside a signature-database buffer.
@@ -114,6 +115,35 @@ DatabaseIterNext (
 }
 
 /**
+  Check the fixed entry size of a recognized hash signature list.
+**/
+STATIC
+BOOLEAN
+IsHashSignatureListValid (
+  IN CONST EFI_SIGNATURE_LIST  *List,
+  IN CONST SIGNATURE_TYPE_MAP  *Map,
+  IN UINTN                     MapCount,
+  IN UINTN                     TrailingDataSize
+  )
+{
+  UINTN  Index;
+  UINTN  ExpectedSize;
+
+  for (Index = 0; Index < MapCount; Index++) {
+    if (CompareGuid (&List->SignatureType, Map[Index].SignatureType)) {
+      ExpectedSize = Map[Index].OwnerSize + Map[Index].DigestSize;
+      if (Map[Index].OwnerSize != 0) {
+        ExpectedSize += TrailingDataSize;
+      }
+
+      return (BOOLEAN)(List->SignatureSize == ExpectedSize);
+    }
+  }
+
+  return TRUE;
+}
+
+/**
   Initialize an iterator over the EFI_SIGNATURE_DATA entries contained in a single
   EFI_SIGNATURE_LIST.
 
@@ -155,6 +185,13 @@ SigListIterInit (
   }
 
   if (List->SignatureHeaderSize > List->SignatureListSize - sizeof (EFI_SIGNATURE_LIST)) {
+    return FALSE;
+  }
+
+  if (!IsHashSignatureListValid (List, mImageHashSignatures, ARRAY_SIZE (mImageHashSignatures), 0) ||
+      !IsHashSignatureListValid (List, mTbsHashSignatures, ARRAY_SIZE (mTbsHashSignatures), sizeof (EFI_TIME)))
+  {
+    DEBUG ((DEBUG_WARN, "DxeImageVerificationLib: invalid hash signature-list entry size.\n"));
     return FALSE;
   }
 
@@ -222,6 +259,7 @@ WinCertIterInit (
   UINTN                  Remaining;
   CONST WIN_CERTIFICATE  *Cert;
   UINTN                  EntrySize;
+  UINT32                 AlignedSize;
 
   if (Iter == NULL) {
     return FALSE;
@@ -245,13 +283,14 @@ WinCertIterInit (
     Cert = (CONST WIN_CERTIFICATE *)(CONST VOID *)Cursor;
 
     if ((Cert->dwLength < sizeof (WIN_CERTIFICATE)) ||
-        (Cert->dwLength > Remaining))
+        (Cert->dwLength > Remaining) ||
+        EFI_ERROR (SafeUint32Add (Cert->dwLength, 7, &AlignedSize)))
     {
       break;
     }
 
     // Each entry is padded to an 8-byte boundary.
-    EntrySize = ALIGN_VALUE (Cert->dwLength, 8);
+    EntrySize = AlignedSize & ~7U;
     if (EntrySize > Remaining) {
       EntrySize = Remaining;
     }
@@ -288,7 +327,7 @@ WinCertIterNext (
   }
 
   Cert      = (CONST WIN_CERTIFICATE *)(CONST VOID *)Iter->Cursor;
-  EntrySize = ALIGN_VALUE (Cert->dwLength, 8);
+  EntrySize = ALIGN_VALUE ((UINTN)Cert->dwLength, 8);
   if (EntrySize > Iter->Remaining) {
     EntrySize = Iter->Remaining;
   }
@@ -929,6 +968,7 @@ typedef struct {
   CONST SIGNATURE_LISTS         *Lists;            // Pointer to the allow-list and revoke-list.
   VOID                          *CacheHandle;      // Pointer to an opaque cache structure used by GetTrustAnchorX509FromAuthData.
   IMAGE_SIGNATURE_EVALUATION    *Evaluation;       // Pointer to the structure containing the signature evaluation results.
+  EFI_STATUS                    Status;            // Failure constructing the authorizing authority.
 } EVALUATE_ANCHOR_CONTEXT;
 
 /**
@@ -1015,6 +1055,11 @@ EvaluateAnchorEntry (
       TbsHashSize -= sizeof (EFI_TIME);
     }
 
+    if (TbsHashSize != Match->DigestSize) {
+      DEBUG ((DEBUG_WARN, "DxeImageVerificationLib: TBS hash size does not match its signature type.\n"));
+      return WalkSkipList;
+    }
+
     Status = GetTrustAnchorX509FromAuthData (
                &Ctx->CacheHandle,
                (CONST UINT8 *)Entry + OwnerSize,
@@ -1051,15 +1096,18 @@ EvaluateAnchorEntry (
     {
       Ctx->Evaluation->Verdict = ImageSignatureRevoked;
     } else {
-      Ctx->Evaluation->Verdict = ImageSignatureAllowed;
-
-      BuildImageAuthority (
-        (OwnerSize == sizeof (EFI_GUID)) ? (CONST EFI_GUID *)Entry : NULL,
-        Anchor,
-        AnchorSize,
-        &Ctx->Evaluation->Authority
-        );
-      CopyGuid (&Ctx->Evaluation->Authority.SignatureType, SignatureType);
+      Ctx->Status = BuildImageAuthority (
+                      (OwnerSize == sizeof (EFI_GUID)) ? (CONST EFI_GUID *)Entry : NULL,
+                      Anchor,
+                      AnchorSize,
+                      &Ctx->Evaluation->Authority
+                      );
+      if (EFI_ERROR (Ctx->Status)) {
+        DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: failed to construct image authority (%r).\n", Ctx->Status));
+      } else {
+        CopyGuid (&Ctx->Evaluation->Authority.SignatureType, SignatureType);
+        Ctx->Evaluation->Verdict = ImageSignatureAllowed;
+      }
     }
   }
 
@@ -1072,7 +1120,7 @@ EvaluateAnchorEntry (
     FreePool (Anchor);
   }
 
-  return (Ctx->Evaluation->Verdict == ImageSignatureAllowed) ? WalkStop : WalkContinue;
+  return (EFI_ERROR (Ctx->Status) || (Ctx->Evaluation->Verdict == ImageSignatureAllowed)) ? WalkStop : WalkContinue;
 }
 
 /**
@@ -1087,8 +1135,8 @@ EvaluateAnchorEntry (
 
   @retval EFI_SUCCESS            Evaluation completed; inspect Evaluation->Verdict.
   @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
-  @retval other                  The image's Authenticode hash could not be computed (propagated
-                                 from GetHash); no verdict was produced.
+  @retval other                  The image hash or authorizing authority could not be constructed;
+                                 no verdict was produced.
 **/
 EFI_STATUS
 EvaluateSignature (
@@ -1160,5 +1208,5 @@ EvaluateSignature (
     FreeTrustAnchorX509Cache (AnchorCtx.CacheHandle);
   }
 
-  return EFI_SUCCESS;
+  return AnchorCtx.Status;
 }

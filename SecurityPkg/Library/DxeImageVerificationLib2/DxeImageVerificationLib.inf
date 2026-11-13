@@ -47,6 +47,7 @@
   UefiRuntimeServicesTableLib
   BaseCryptLib
   BaseMemoryLib
+  SafeIntLib
   DebugLib
   DevicePathLib
   SecureBootVariableLib
