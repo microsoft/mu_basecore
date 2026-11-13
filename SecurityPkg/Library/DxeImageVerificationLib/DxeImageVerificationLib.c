@@ -225,8 +225,19 @@ ValidateImage (
                &Lists,
                &Evaluation
                );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: signature evaluation failed (%r); discarding SBRT record if present.\n", Status));
+      if ((Info != NULL) && (Info->Image != NULL)) {
+        FreePool (Info->Image);
+        Info->Image = NULL;
+      }
+
+      SignatureIndex++;
+      continue;
+    }
+
     AppendVerificationSignature (Info, SignatureIndex++, &Evaluation.Verification);
-    if (!EFI_ERROR (Status) && (Evaluation.Verdict == ImageSignatureAllowed)) {
+    if (Evaluation.Verdict == ImageSignatureAllowed) {
       if (Info != NULL) {
         Info->Status = EFI_IMAGE_VERIFICATION_STATUS_AUTHORIZED_BY_AUTHORITY;
       }

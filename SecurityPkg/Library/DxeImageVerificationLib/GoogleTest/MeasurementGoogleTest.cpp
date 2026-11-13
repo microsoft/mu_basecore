@@ -474,6 +474,25 @@ TEST_F (MeasureVariableTest, Success_ExtendsPcr7AsVariableAuthority) {
     );
 }
 
+TEST_F (MeasureVariableTest, OversizedEvent_ReturnsInvalidParameter) {
+  UINT8        Data       = 0;
+  CONST UINTN  HeaderSize = sizeof (UEFI_VARIABLE_DATA)
+                            - sizeof (((UEFI_VARIABLE_DATA *)0)->UnicodeName)
+                            - sizeof (((UEFI_VARIABLE_DATA *)0)->VariableData);
+  CONST UINTN  NameSize               = 2 * sizeof (CHAR16);
+  CONST UINTN  FirstOversizedDataSize = MAX_UINT32 - HeaderSize - NameSize + 1;
+
+  EXPECT_CALL (TpmMock, TpmMeasureAndLogData (_, _, _, _, _, _)).Times (0);
+  EXPECT_EQ (
+    MeasureVariable (mDbName, &gEfiImageSecurityDatabaseGuid, &Data, FirstOversizedDataSize),
+    EFI_INVALID_PARAMETER
+    );
+  EXPECT_EQ (
+    MeasureVariable (mDbName, &gEfiImageSecurityDatabaseGuid, &Data, MAX_UINTN),
+    EFI_INVALID_PARAMETER
+    );
+}
+
 TEST_F (MeasureVariableTest, MeasureFails_PropagatesError) {
   UINT8  Data[4] = { 1, 2, 3, 4 };
 
