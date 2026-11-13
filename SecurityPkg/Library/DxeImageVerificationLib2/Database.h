@@ -238,8 +238,8 @@ IsCertInRevokeList (
 
   @retval EFI_SUCCESS            Evaluation completed; inspect Evaluation->Verdict.
   @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
-  @retval other                  The image's Authenticode hash could not be computed (propagated
-                                 from GetHash); no verdict was produced.
+  @retval other                  The image hash or authorizing authority could not be constructed;
+                                 no verdict was produced.
 **/
 EFI_STATUS
 EvaluateSignature (
