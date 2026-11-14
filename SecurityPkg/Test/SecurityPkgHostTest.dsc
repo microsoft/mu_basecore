@@ -69,14 +69,14 @@
 # MU_CHANGE - Problems with Consuming OpensslLibFull and UnitTestHostBaseCryptLib from CryptoPkg
 
   # MU_CHANGE [BEGIN]
-  SecurityPkg/Library/AuthenticodeLib/GoogleTest/AuthenticodeLibGoogleTest.inf {
+  SecurityPkg/Library/BaseAuthenticodeLib/GoogleTest/AuthenticodeLibGoogleTest.inf {
     <LibraryClasses>
-      AuthenticodeLib|SecurityPkg/Library/AuthenticodeLib/AuthenticodeLib.inf
+      AuthenticodeLib|SecurityPkg/Library/BaseAuthenticodeLib/BaseAuthenticodeLib.inf
       PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
       PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
   }
 
-  SecurityPkg/Library/AuthenticodeLib/GoogleTest/AuthenticodeLibFaultGoogleTest.inf {
+  SecurityPkg/Library/BaseAuthenticodeLib/GoogleTest/AuthenticodeLibFaultGoogleTest.inf {
     <LibraryClasses>
       MemoryAllocationLib|MdePkg/Test/Mock/Library/GoogleTest/MockMemoryAllocationLib/MockMemoryAllocationLib.inf
       PeCoffLib|MdePkg/Test/Mock/Library/GoogleTest/MockPeCoffLib/MockPeCoffLib.inf

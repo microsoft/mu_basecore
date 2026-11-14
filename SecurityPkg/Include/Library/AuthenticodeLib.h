@@ -1,9 +1,9 @@
 /** @file
   Utilities for working with Windows Authenticode signatures on PE/COFF images.
 
-  This library collects operations related to a PE/COFF image's Windows Authenticode signature;
+  This library collects operations related to a PE/COFF image's Windows Authenticode signature.
 
-  Copyright (C) Microsoft Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 

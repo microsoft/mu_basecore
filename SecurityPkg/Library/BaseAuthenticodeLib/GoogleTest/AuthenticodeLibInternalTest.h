@@ -1,7 +1,7 @@
 /** @file
   Test-only adapters for AuthenticodeLib's internal range checks.
 
-  Copyright (C) Microsoft Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -10,6 +10,16 @@
 // MU_CHANGE - NEW FILE
 
 #include <Uefi.h>
+#include <Library/PeCoffLib.h>
+
+EFI_STATUS
+EFIAPI
+TestGetAuthenticodeImageLayout (
+  IN CONST UINT8                         *Image,
+  IN UINTN                               FileSize,
+  IN CONST PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext,
+  IN BOOLEAN                             NullLayout
+  );
 
 EFI_STATUS
 EFIAPI
@@ -31,6 +41,15 @@ TestAppendAuthenticodeHeaders (
   IN     UINTN        SecurityDirectoryOffset,
   IN     UINTN        SizeOfHeaders,
   IN     UINT32       NumberOfRvaAndSizes,
+  OUT    UINT8        *Out,
+  IN OUT UINTN        *OutPos
+  );
+
+EFI_STATUS
+EFIAPI
+TestAppendAuthenticodeHeadersNullLayout (
+  IN     CONST UINT8  *Image,
+  IN     UINTN        FileSize,
   OUT    UINT8        *Out,
   IN OUT UINTN        *OutPos
   );

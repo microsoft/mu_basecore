@@ -1,7 +1,7 @@
 /** @file
   Fault-injection tests for AuthenticodeLib's parsing and allocation paths.
 
-  Copyright (C) Microsoft Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -206,6 +206,16 @@ TEST_F (AuthenticodeLibFaultTest, LoaderFailureIsReportedByBothApis) {
   EXPECT_EQ (Length, (UINTN)0);
 }
 
+TEST_F (AuthenticodeLibFaultTest, ImageLayoutRejectsNullPointers) {
+  PE_COFF_LOADER_IMAGE_CONTEXT  Context = { };
+
+  PopulateContext (&Context);
+  EXPECT_EQ (TestGetAuthenticodeImageLayout (NULL, Image.size (), &Context, FALSE), EFI_INVALID_PARAMETER);
+  EXPECT_EQ (TestGetAuthenticodeImageLayout (Image.data (), Image.size (), NULL, FALSE), EFI_INVALID_PARAMETER);
+  EXPECT_EQ (TestGetAuthenticodeImageLayout (Image.data (), Image.size (), &Context, TRUE), EFI_INVALID_PARAMETER);
+  EXPECT_EQ (TestGetAuthenticodeImageLayout (Image.data (), Image.size (), &Context, FALSE), EFI_SUCCESS);
+}
+
 TEST_F (AuthenticodeLibFaultTest, TeImageIsUnsupportedForAssembly) {
   IsTeImage = TRUE;
   ExpectBuildError (EFI_UNSUPPORTED);
@@ -368,6 +378,22 @@ TEST_F (AuthenticodeLibFaultTest, AppendImageRegionChecksBothBufferBoundaries) {
   EXPECT_EQ (OutPos, sizeof (Input));
 }
 
+TEST_F (AuthenticodeLibFaultTest, HeaderAssemblyRejectsNullPointers) {
+  UINT8  Input[16] = { 0 };
+  UINT8  Output[16];
+  UINTN  OutPos = 0;
+
+  SetMem (Output, sizeof (Output), 0xCC);
+  EXPECT_EQ (TestAppendAuthenticodeHeaders (NULL, sizeof (Input), 0, 8, 16, 5, Output, &OutPos), EFI_INVALID_PARAMETER);
+  EXPECT_EQ (TestAppendAuthenticodeHeadersNullLayout (Input, sizeof (Input), Output, &OutPos), EFI_INVALID_PARAMETER);
+  EXPECT_EQ (TestAppendAuthenticodeHeaders (Input, sizeof (Input), 0, 8, 16, 5, NULL, &OutPos), EFI_INVALID_PARAMETER);
+  EXPECT_EQ (TestAppendAuthenticodeHeaders (Input, sizeof (Input), 0, 8, 16, 5, Output, NULL), EFI_INVALID_PARAMETER);
+  EXPECT_EQ (OutPos, (UINTN)0);
+  for (UINT8 Byte : Output) {
+    EXPECT_EQ (Byte, 0xCC);
+  }
+}
+
 TEST_F (AuthenticodeLibFaultTest, HeaderAssemblyRejectsInvalidRanges) {
   UINT8  Input[16]  = { 0 };
   UINT8  Output[16] = { 0 };
@@ -379,6 +405,66 @@ TEST_F (AuthenticodeLibFaultTest, HeaderAssemblyRejectsInvalidRanges) {
   EXPECT_EQ (TestAppendAuthenticodeHeaders (Input, sizeof (Input), 0, 3, 16, 5, Output, &OutPos), EFI_VOLUME_CORRUPTED);
   EXPECT_EQ (TestAppendAuthenticodeHeaders (Input, sizeof (Input), 0, 17, 16, 5, Output, &OutPos), EFI_VOLUME_CORRUPTED);
   EXPECT_EQ (TestAppendAuthenticodeHeaders (Input, sizeof (Input), 0, 8, 15, 5, Output, &OutPos), EFI_VOLUME_CORRUPTED);
+}
+
+TEST_F (AuthenticodeLibFaultTest, HeaderAssemblyRejectsChecksumEndBeyondFileBeforeCopying) {
+  UINT8  Input[16] = { 0 };
+  UINT8  Output[18];
+  UINTN  OutPos;
+
+  for (UINT32 DirectoryCount = EFI_IMAGE_DIRECTORY_ENTRY_SECURITY;
+       DirectoryCount <= EFI_IMAGE_DIRECTORY_ENTRY_SECURITY + 1;
+       DirectoryCount++)
+  {
+    SetMem (Output, sizeof (Output), 0xCC);
+    OutPos = 0;
+    EXPECT_EQ (
+      TestAppendAuthenticodeHeaders (
+        Input,
+        sizeof (Input),
+        sizeof (Input) - sizeof (UINT32) + 1,
+        sizeof (Input) + 1,
+        sizeof (Input),
+        DirectoryCount,
+        Output + 1,
+        &OutPos
+        ),
+      EFI_VOLUME_CORRUPTED
+      );
+    EXPECT_EQ (OutPos, (UINTN)0);
+    for (UINT8 Byte : Output) {
+      EXPECT_EQ (Byte, 0xCC);
+    }
+  }
+}
+
+TEST_F (AuthenticodeLibFaultTest, HeaderAssemblyAllowsChecksumEndingAtFileEnd) {
+  UINT8  Input[16];
+  UINT8  Output[18];
+  UINTN  OutPos = 0;
+
+  for (UINTN Index = 0; Index < sizeof (Input); Index++) {
+    Input[Index] = (UINT8)Index;
+  }
+
+  SetMem (Output, sizeof (Output), 0xCC);
+  ASSERT_EQ (
+    TestAppendAuthenticodeHeaders (
+      Input,
+      sizeof (Input),
+      sizeof (Input) - sizeof (UINT32),
+      0,
+      sizeof (Input),
+      EFI_IMAGE_DIRECTORY_ENTRY_SECURITY,
+      Output + 1,
+      &OutPos
+      ),
+    EFI_SUCCESS
+    );
+  EXPECT_EQ (OutPos, sizeof (Input) - sizeof (UINT32));
+  EXPECT_EQ (CompareMem (Output + 1, Input, OutPos), 0);
+  EXPECT_EQ (Output[0], 0xCC);
+  EXPECT_EQ (Output[sizeof (Output) - 1], 0xCC);
 }
 
 TEST_F (AuthenticodeLibFaultTest, SectionAssemblyRejectsTruncatedSectionHeader) {

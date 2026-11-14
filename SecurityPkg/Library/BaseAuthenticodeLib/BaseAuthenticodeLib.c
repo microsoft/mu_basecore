@@ -1,9 +1,9 @@
 /** @file
   Utilities for working with Windows Authenticode signatures on PE/COFF images.
 
-  This library collects operations related to a PE/COFF image's Windows Authenticode signature;
+  This library collects operations related to a PE/COFF image's Windows Authenticode signature.
 
-  Copyright (C) Microsoft Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -92,6 +92,13 @@ AuthenticodeImageRead (
 
 /**
   Check that a range lies entirely within a buffer, without overflowing.
+
+  @param[in]  BufferSize  Size of the buffer in bytes.
+  @param[in]  Offset      Start of the range within the buffer.
+  @param[in]  Size        Length of the range in bytes.
+
+  @retval TRUE   The range fits within the buffer.
+  @retval FALSE  The range extends beyond the buffer.
 **/
 STATIC
 BOOLEAN
@@ -144,6 +151,16 @@ AppendImageRegion (
 
 /**
   Locate the Authenticode header exclusions and section table in a validated PE image.
+
+  @param[in]   Image         The PE/COFF image bytes.
+  @param[in]   FileSize      Size of Image in bytes.
+  @param[in]   ImageContext  Context populated by PeCoffLoaderGetImageInfo().
+  @param[out]  Layout        On success, the header offsets, sizes, and section-table information.
+
+  @retval EFI_SUCCESS            The layout was populated.
+  @retval EFI_INVALID_PARAMETER  Image, ImageContext, or Layout is NULL.
+  @retval EFI_UNSUPPORTED        The image is a TE image.
+  @retval EFI_VOLUME_CORRUPTED   The image headers or layout fields are invalid.
 **/
 STATIC
 EFI_STATUS
@@ -164,6 +181,10 @@ GetAuthenticodeImageLayout (
   UINTN                   ExpectedOptionalHeaderSize;
   UINTN                   OptionalHeaderOffset;
   UINTN                   SectionTableSize;
+
+  if ((Image == NULL) || (ImageContext == NULL) || (Layout == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   if (ImageContext->IsTeImage) {
     return EFI_UNSUPPORTED;
@@ -222,6 +243,18 @@ GetAuthenticodeImageLayout (
 
 /**
   Append headers, excluding the checksum and any Certificate Table directory entry.
+
+  Out and OutPos may be partially updated if an error occurs.
+
+  @param[in]      Image     The PE/COFF image bytes.
+  @param[in]      FileSize  Size of Image in bytes, and the capacity of Out.
+  @param[in]      Layout    Validated header exclusions and sizes.
+  @param[out]     Out       Destination buffer of FileSize bytes.
+  @param[in,out]  OutPos    Current write position in Out; advanced by the bytes copied.
+
+  @retval EFI_SUCCESS            The headers were appended.
+  @retval EFI_INVALID_PARAMETER  Image, Layout, Out, or OutPos is NULL.
+  @retval EFI_VOLUME_CORRUPTED   A header exclusion or source or destination range is invalid.
 **/
 STATIC
 EFI_STATUS
@@ -237,7 +270,13 @@ AppendAuthenticodeHeaders (
   UINTN       ChecksumEnd;
   UINTN       SecurityDirectoryEnd;
 
-  if (RETURN_ERROR (SafeUintnAdd (Layout->ChecksumOffset, sizeof (UINT32), &ChecksumEnd))) {
+  if ((Image == NULL) || (Layout == NULL) || (Out == NULL) || (OutPos == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (RETURN_ERROR (SafeUintnAdd (Layout->ChecksumOffset, sizeof (UINT32), &ChecksumEnd)) ||
+      (ChecksumEnd > FileSize))
+  {
     return EFI_VOLUME_CORRUPTED;
   }
 
@@ -290,6 +329,12 @@ AppendAuthenticodeHeaders (
 
 /**
   Restore the max-heap property without recursion.
+
+  The child subtrees of Root must already satisfy the max-heap property.
+
+  @param[in,out]  Sections  Array of section ranges containing the heap.
+  @param[in]      Root      Index of the root of the subtree to restore.
+  @param[in]      Count     Number of entries in the heap.
 **/
 STATIC
 VOID
@@ -321,6 +366,9 @@ SiftSectionHeap (
 
 /**
   Sort section ranges by file offset in O(n log n) time and constant stack space.
+
+  @param[in,out]  Sections  Array of section ranges, sorted by file offset on return.
+  @param[in]      Count     Number of section ranges in the array.
 **/
 STATIC
 VOID
@@ -346,6 +394,21 @@ SortSections (
 
 /**
   Append non-overlapping sections and intervening file data in file-offset order.
+
+  Sections with no raw data are skipped. Out, OutPos, and NextFileOffset may be
+  partially updated if an error occurs.
+
+  @param[in]      Image           The PE/COFF image bytes.
+  @param[in]      FileSize        Size of Image in bytes, and the capacity of Out.
+  @param[in]      Layout          Validated section-table and header information.
+  @param[in]      DataEnd         Exclusive end of the image data to include.
+  @param[out]     Out             Destination buffer of FileSize bytes.
+  @param[in,out]  OutPos          Current write position in Out; advanced by the bytes copied.
+  @param[in,out]  NextFileOffset  First unprocessed file offset; advanced past appended sections.
+
+  @retval EFI_SUCCESS           The section ranges and intervening data were appended.
+  @retval EFI_VOLUME_CORRUPTED  A section, its header, or a source or destination range is invalid.
+  @retval EFI_OUT_OF_RESOURCES  The section sort buffer could not be allocated.
 **/
 STATIC
 EFI_STATUS
@@ -444,6 +507,16 @@ Done:
 
 /**
   Append file data after the final section and before any certificate table.
+
+  @param[in]      Image           The PE/COFF image bytes.
+  @param[in]      FileSize        Size of Image in bytes, and the capacity of Out.
+  @param[in]      NextFileOffset  Start of the remaining file data.
+  @param[in]      DataEnd         Exclusive end of the image data to include.
+  @param[out]     Out             Destination buffer of FileSize bytes.
+  @param[in,out]  OutPos          Current write position in Out; advanced by the bytes copied.
+
+  @retval EFI_SUCCESS           The remaining data was appended.
+  @retval EFI_VOLUME_CORRUPTED  The remaining data or destination range is invalid.
 **/
 STATIC
 EFI_STATUS
@@ -465,6 +538,14 @@ AppendRemainingImageData (
 
 /**
   Validate the certificate-table range and determine the end of image data.
+
+  @param[in]   SecurityDirectory  Certificate Table directory; its VirtualAddress is a file offset.
+  @param[in]   FileSize           Size of the image in bytes.
+  @param[in]   SizeOfHeaders      Size of the image headers in bytes.
+  @param[out]  DataEnd            On success, the certificate-table offset, or FileSize if absent.
+
+  @retval EFI_SUCCESS           The end of image data was determined.
+  @retval EFI_VOLUME_CORRUPTED  The certificate-table range or placement is invalid.
 **/
 STATIC
 EFI_STATUS

@@ -1,7 +1,7 @@
 ## @file
 # Unit test suite for GetWinCertificates in AuthenticodeLib using Google Test.
 #
-# Copyright (C) Microsoft Corporation.
+# Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 

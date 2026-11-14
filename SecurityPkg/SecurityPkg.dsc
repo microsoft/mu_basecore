@@ -35,7 +35,7 @@
   PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
   PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
   # MU_CHANGE [BEGIN]
-  AuthenticodeLib|SecurityPkg/Library/AuthenticodeLib/AuthenticodeLib.inf
+  AuthenticodeLib|SecurityPkg/Library/BaseAuthenticodeLib/BaseAuthenticodeLib.inf
   # MU_CHANGE [END]
 
   DxeServicesLib|MdePkg/Library/DxeServicesLib/DxeServicesLib.inf
@@ -208,7 +208,7 @@
 
 [Components]
   # MU_CHANGE [BEGIN]
-  SecurityPkg/Library/AuthenticodeLib/AuthenticodeLib.inf
+  SecurityPkg/Library/BaseAuthenticodeLib/BaseAuthenticodeLib.inf
   # MU_CHANGE [END]
   SecurityPkg/Library/DxeImageVerificationLib/DxeImageVerificationLib.inf
   SecurityPkg/Library/DxeImageAuthenticationStatusLib/DxeImageAuthenticationStatusLib.inf

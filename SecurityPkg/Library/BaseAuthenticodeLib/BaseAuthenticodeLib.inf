@@ -4,7 +4,7 @@
 #  Collects operations related to a PE/COFF image's Windows Authenticode signature, currently
 #  BuildAuthenticodeImage ().
 #
-# Copyright (C) Microsoft Corporation.
+# Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -13,7 +13,7 @@
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = AuthenticodeLib
+  BASE_NAME                      = BaseAuthenticodeLib
   FILE_GUID                      = D7E6F5A4-B3C2-4190-8A7B-6C5D4E3F2A1B
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
@@ -26,7 +26,7 @@
 #
 
 [Sources]
-  AuthenticodeLib.c
+  BaseAuthenticodeLib.c
 
 [Packages]
   MdePkg/MdePkg.dec
