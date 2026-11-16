@@ -35,8 +35,7 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_LIB_H_
-#define IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_LIB_H_
+#pragma once
 
 #include <Uefi.h>
 #include <Guid/ImageSecureBootVerificationResultTable.h>
@@ -190,5 +189,3 @@ EFIAPI
 ImageVerificationResultIteratorNextSignature (
   IN OUT IMAGE_VERIFICATION_RESULT_ITERATOR  *Iterator
   );
-
-#endif // IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_LIB_H_

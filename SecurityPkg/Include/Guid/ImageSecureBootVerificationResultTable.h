@@ -47,8 +47,7 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_H_
-#define EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_H_
+#pragma once
 
 #include <Uefi.h>
 
@@ -185,5 +184,3 @@ typedef struct {
   UINT32    NumberOfImages;          // Count of EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT records that follow.
   // EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT  Images[];  // NumberOfImages records, each self-sized.
 } EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE;
-
-#endif // EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_H_
