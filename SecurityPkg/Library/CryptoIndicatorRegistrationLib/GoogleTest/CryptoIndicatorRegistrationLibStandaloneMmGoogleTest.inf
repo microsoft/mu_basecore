@@ -1,0 +1,37 @@
+## @file
+# Unit tests for Standalone MM ECIT registration using Google Test.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = CryptoIndicatorRegistrationLibStandaloneMmGoogleTest
+  FILE_GUID                      = E3C5C066-4596-4D47-9495-B905F724350C
+  MODULE_TYPE                    = HOST_APPLICATION
+  VERSION_STRING                 = 1.0
+
+[Sources]
+  CryptoIndicatorRegistrationLibStandaloneMmGoogleTest.cpp
+  ../CryptoIndicatorRegistrationLibStandaloneMm.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  SecurityPkg/SecurityPkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  GoogleTestLib
+  MemoryAllocationLib
+  MmServicesTableLib
+
+[Guids]
+  gEcitMmBridgeHandlerGuid
+
+[BuildOptions]
+  MSFT:*_*_*_CC_FLAGS = /EHsc
