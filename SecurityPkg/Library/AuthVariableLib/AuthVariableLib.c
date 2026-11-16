@@ -18,6 +18,14 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "AuthServiceInternal.h"
 
+// MU_CHANGE [BEGIN] - ECIT feature reporting.
+#include <Library/BaseCryptLib.h>
+#include <Library/CryptoIndicatorRegistrationLib.h>
+#include <Library/EcitEncodingLib.h>
+#include <Guid/CryptoIndicatorTable.h>
+#include <Guid/CryptoOpId.h>
+// MU_CHANGE [END]
+
 ///
 /// Global database array for scratch
 ///
@@ -34,6 +42,132 @@ EFI_GUID  mSignatureSupport[] = { EFI_CERT_SHA1_GUID, EFI_CERT_SHA256_GUID, EFI_
 VOID  *mHashSha256Ctx = NULL;
 VOID  *mHashSha384Ctx = NULL;
 VOID  *mHashSha512Ctx = NULL;
+
+// MU_CHANGE [BEGIN] - ECIT feature reporting.
+STATIC CONST EFI_GUID  mSecureBootDatabaseUpdateAuthorizationTypes[] = {
+  EFI_CERT_X509_GUID
+};
+
+STATIC CONST EFI_GUID  *mDatabaseUpdateVerificationOps[] = {
+  &gCryptoOpCmsVerifyGuid,
+  &gCryptoOpCmsContentDigestGuid
+};
+
+/**
+  Register the CMS signature and digest OIDs used for Secure Boot database
+  update verification. If either query fails, do not report a partial set.
+**/
+VOID
+EFIAPI
+ReportDatabaseUpdateVerificationCapability (
+  VOID
+  )
+{
+  EFI_STATUS                Status;
+  UINTN                     Index;
+  UINTN                     CapabilityIndex;
+  BASE_CRYPT_OP_CAPABILITY  *OpCapabilities[ARRAY_SIZE (mDatabaseUpdateVerificationOps)]    = { 0 };
+  UINTN                     OpCapabilityCounts[ARRAY_SIZE (mDatabaseUpdateVerificationOps)] = { 0 };
+  UINTN                     TotalCapabilityCount;
+  BASE_CRYPT_OP_CAPABILITY  *Capabilities;
+  UINTN                     CapabilityOffset;
+  VOID                      *Payload;
+  UINTN                     PayloadSize;
+
+  TotalCapabilityCount = 0;
+  Capabilities         = NULL;
+  Payload              = NULL;
+  for (Index = 0; Index < ARRAY_SIZE (mDatabaseUpdateVerificationOps); Index++) {
+    Status = GetCryptoOpCapability (
+               mDatabaseUpdateVerificationOps[Index],
+               &OpCapabilities[Index],
+               &OpCapabilityCounts[Index]
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_WARN,
+        "AuthVariableLib: ECIT op %g unavailable (%r)\n",
+        mDatabaseUpdateVerificationOps[Index],
+        Status
+        ));
+      goto Cleanup;
+    }
+
+    if (TotalCapabilityCount > (MAX_UINTN - OpCapabilityCounts[Index])) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Cleanup;
+    }
+
+    TotalCapabilityCount += OpCapabilityCounts[Index];
+  }
+
+  if (TotalCapabilityCount != 0) {
+    if (TotalCapabilityCount > (MAX_UINTN / sizeof (*Capabilities))) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Cleanup;
+    }
+
+    Capabilities = AllocatePool (TotalCapabilityCount * sizeof (*Capabilities));
+    if (Capabilities == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Cleanup;
+    }
+
+    CapabilityOffset = 0;
+    for (Index = 0; Index < ARRAY_SIZE (mDatabaseUpdateVerificationOps); Index++) {
+      if (OpCapabilityCounts[Index] == 0) {
+        continue;
+      }
+
+      for (CapabilityIndex = 0; CapabilityIndex < OpCapabilityCounts[Index]; CapabilityIndex++) {
+        if ((mDatabaseUpdateVerificationOps[Index] == &gCryptoOpCmsContentDigestGuid) &&
+            !AuthServiceIsSupportedDigest (&OpCapabilities[Index][CapabilityIndex]))
+        {
+          continue;
+        }
+
+        Capabilities[CapabilityOffset++] = OpCapabilities[Index][CapabilityIndex];
+      }
+    }
+
+    TotalCapabilityCount = CapabilityOffset;
+  }
+
+  Status = EcitEncodeOidSet (
+             Capabilities,
+             TotalCapabilityCount,
+             &Payload,
+             &PayloadSize
+             );
+  if (!EFI_ERROR (Status)) {
+    Status = EcitRegisterCryptoCapability (
+               &gEfiEcitFeatureSbDatabaseUpdateVerificationGuid,
+               Payload,
+               PayloadSize
+               );
+  }
+
+Cleanup:
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "AuthVariableLib: failed to report ECIT capability - %r\n", Status));
+  }
+
+  if (Payload != NULL) {
+    FreePool (Payload);
+  }
+
+  if (Capabilities != NULL) {
+    FreePool (Capabilities);
+  }
+
+  for (Index = 0; Index < ARRAY_SIZE (mDatabaseUpdateVerificationOps); Index++) {
+    if (OpCapabilities[Index] != NULL) {
+      FreePool (OpCapabilities[Index]);
+    }
+  }
+}
+
+// MU_CHANGE [END]
 
 VARIABLE_ENTRY_PROPERTY  mAuthVarEntry[] = {
   {
@@ -397,6 +531,15 @@ AuthVariableLibInitialize (
   mAuthVarAddressPointer[10]                = (VOID **)&(mAuthVarLibContextIn->AtRuntime),
   AuthVarLibContextOut->AddressPointer      = mAuthVarAddressPointer;
   AuthVarLibContextOut->AddressPointerCount = ARRAY_SIZE (mAuthVarAddressPointer);
+
+  // MU_CHANGE [BEGIN] - ECIT reporting does not change variable initialization.
+  ReportDatabaseUpdateVerificationCapability ();
+  EcitRegisterCryptoCapability (
+    &gEfiEcitFeatureSbDatabaseUpdateAuthorizationGuid,
+    mSecureBootDatabaseUpdateAuthorizationTypes,
+    sizeof (mSecureBootDatabaseUpdateAuthorizationTypes)
+    );
+  // MU_CHANGE [END]
 
   return Status;
 }

@@ -133,6 +133,7 @@ typedef struct {
   VOID                         **HashShaCtx;
   UINT8                        *OidValue;
   UINTN                        OidLength;
+  CONST CHAR8                  *OidString; // MU_CHANGE
 } EFI_HASH_INFO;
 
 //
@@ -144,11 +145,33 @@ UINT8  mSha256OidValue[] = { 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x0
 UINT8  mSha384OidValue[] = { 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x02 };
 UINT8  mSha512OidValue[] = { 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03 };
 
+// MU_CHANGE [BEGIN] - Share verifier digest support with ECIT reporting.
 EFI_HASH_INFO  mHashInfo[] = {
-  { SHA256_DIGEST_SIZE, Sha256GetContextSize, Sha256Init, Sha256Update, Sha256Final, &mHashSha256Ctx, mSha256OidValue, 9 },
-  { SHA384_DIGEST_SIZE, Sha384GetContextSize, Sha384Init, Sha384Update, Sha384Final, &mHashSha384Ctx, mSha384OidValue, 9 },
-  { SHA512_DIGEST_SIZE, Sha512GetContextSize, Sha512Init, Sha512Update, Sha512Final, &mHashSha512Ctx, mSha512OidValue, 9 },
+  { SHA256_DIGEST_SIZE, Sha256GetContextSize, Sha256Init, Sha256Update, Sha256Final, &mHashSha256Ctx, mSha256OidValue, 9, "2.16.840.1.101.3.4.2.1" },
+  { SHA384_DIGEST_SIZE, Sha384GetContextSize, Sha384Init, Sha384Update, Sha384Final, &mHashSha384Ctx, mSha384OidValue, 9, "2.16.840.1.101.3.4.2.2" },
+  { SHA512_DIGEST_SIZE, Sha512GetContextSize, Sha512Init, Sha512Update, Sha512Final, &mHashSha512Ctx, mSha512OidValue, 9, "2.16.840.1.101.3.4.2.3" },
 };
+
+BOOLEAN
+AuthServiceIsSupportedDigest (
+  IN CONST BASE_CRYPT_OP_CAPABILITY  *Capability
+  )
+{
+  UINTN  Index;
+
+  for (Index = 0; Index < ARRAY_SIZE (mHashInfo); Index++) {
+    if ((Capability->AlgorithmOid != NULL) &&
+        (Capability->AlgorithmOidSize == AsciiStrSize (mHashInfo[Index].OidString)) &&
+        (CompareMem (Capability->AlgorithmOid, mHashInfo[Index].OidString, Capability->AlgorithmOidSize) == 0))
+    {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+// MU_CHANGE [END]
 
 //
 // Requirement for different signature type which have been defined in UEFI spec.

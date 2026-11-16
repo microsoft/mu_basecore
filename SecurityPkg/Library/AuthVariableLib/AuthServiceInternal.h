@@ -19,6 +19,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #pragma once
 
+#include <Uefi.h> // MU_CHANGE
 #include <Library/AuthVariableLib.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -96,6 +97,32 @@ extern VOID  *mHashSha384Ctx;
 extern VOID  *mHashSha512Ctx;
 
 extern AUTH_VAR_LIB_CONTEXT_IN  *mAuthVarLibContextIn;
+
+// MU_CHANGE [BEGIN] - ECIT feature reporting.
+
+/**
+  Query and register the authenticated-update verifier's ECIT capability set.
+**/
+VOID
+EFIAPI
+ReportDatabaseUpdateVerificationCapability (
+  VOID
+  );
+
+/**
+  Check whether an OID names a digest supported by authenticated updates.
+
+  @param[in] Capability  Provider capability to check.
+
+  @retval TRUE   The digest is present in the authenticated-update hash table.
+  @retval FALSE  The digest is not supported by this verifier.
+**/
+BOOLEAN
+AuthServiceIsSupportedDigest (
+  IN CONST BASE_CRYPT_OP_CAPABILITY  *Capability
+  );
+
+// MU_CHANGE [END]
 
 /**
   Process variable with EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS set

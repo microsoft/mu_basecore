@@ -1,0 +1,56 @@
+## @file
+# Host regression tests for authenticated-variable ECIT reporting.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = EcitAuthVariableReportingTest
+  FILE_GUID                      = B74F5F98-5A89-4E85-AB73-9CC01021F17F
+  MODULE_TYPE                    = HOST_APPLICATION
+  VERSION_STRING                 = 1.0
+
+[Sources]
+  EcitAuthVariableReportingTest.cpp
+  ../AuthVariableLib.c
+  ../AuthService.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  CryptoPkg/CryptoPkg.dec
+  SecurityPkg/SecurityPkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  BaseCryptLib
+  DebugLib
+  EcitEncodingLib
+  GoogleTestLib
+  MemoryAllocationLib
+  PlatformSecureLib
+
+[Guids]
+  gCryptoOpCmsVerifyGuid
+  gCryptoOpCmsContentDigestGuid
+  gEfiEcitFeatureSbDatabaseUpdateVerificationGuid
+  gEfiEcitFeatureSbDatabaseUpdateAuthorizationGuid
+  gEfiGlobalVariableGuid
+  gEfiImageSecurityDatabaseGuid
+  gEfiSecureBootEnableDisableGuid
+  gEfiCustomModeEnableGuid
+  gEfiVendorKeysNvGuid
+  gEfiCertDbGuid
+  gEfiCertX509Guid
+  gEfiCertPkcs7Guid
+
+[FeaturePcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEnforceSelfsignedPk
+  gEfiMdeModulePkgTokenSpaceGuid.PcdRequireSelfSignedPk
+
+[BuildOptions]
+  MSFT:*_*_*_CC_FLAGS = /EHsc

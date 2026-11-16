@@ -43,6 +43,8 @@
   BaseCryptLib
   PlatformSecureLib
   VariablePolicyLib
+  CryptoIndicatorRegistrationLib  # MU_CHANGE
+  EcitEncodingLib  # MU_CHANGE
 
 # MU_CHANGE [BEGIN] - TCBZ2506
 [FeaturePcd]
@@ -50,6 +52,11 @@
 # MU_CHANGE [END]
 
 [Guids]
+  gEfiEcitFeatureSbDatabaseUpdateVerificationGuid   ## CONSUMES ## MU_CHANGE
+  gEfiEcitFeatureSbDatabaseUpdateAuthorizationGuid  ## CONSUMES ## MU_CHANGE
+  gCryptoOpCmsVerifyGuid                           ## CONSUMES ## MU_CHANGE
+  gCryptoOpCmsContentDigestGuid                    ## CONSUMES ## MU_CHANGE
+
   ## CONSUMES            ## Variable:L"SetupMode"
   ## PRODUCES            ## Variable:L"SetupMode"
   ## SOMETIMES_CONSUMES  ## Variable:L"PK"
