@@ -105,7 +105,7 @@ Authenticode image. This buffer is not a loadable PE image.
     +---------------------------------------------------+
 ```
 
-The implementation separates this work into three private helpers:
+The implementation separates this work into four private helpers:
 
 1. `GetAuthenticodeImageLayout()` locates the header fields and section table
    after `PeCoffLib` has validated the image.
@@ -161,6 +161,6 @@ failures.
 
 ## References
 
-- [Microsoft PE format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format),
+- [Microsoft PE format](https://learn.microsoft.com/windows/win32/debug/pe-format),
   particularly the Optional Header Data Directories and Attribute
   Certificate Table sections.
