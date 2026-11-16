@@ -16,6 +16,7 @@
   CryptoIndicatorTableDxeGoogleTest.cpp
   ../CryptoIndicatorTableDxe.c
   ../CryptoIndicatorBridgeDxe.c
+  ../../Application/DumpCryptoIndicatorTable/DumpCryptoIndicatorTable.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -31,6 +32,7 @@
   HobLib
   MemoryAllocationLib
   PcdLib
+  PrintLib
   UefiBootServicesTableLib
   UefiLib
 
@@ -51,6 +53,12 @@
   gEdkiiEcitCapabilityHobGuid
   gEcitMmBridgeHandlerGuid
   gEfiEcitFeatureSbImageVerificationGuid
+  gEfiEcitFeatureSbImageAuthorizationGuid
+  gEfiEcitFeatureSbDatabaseUpdateAuthorizationGuid
+  gEfiEcitFeatureSbImageRevocationGuid
+  gEfiEcitFeatureSbDatabaseUpdateVerificationGuid
+  gEfiEcitFeatureSystemFirmwareUpdateGuid
+  gEfiEcitFeatureEsrtFirmwareUpdateGuid
 
 [BuildOptions]
   MSFT:*_*_*_CC_FLAGS = /EHsc
