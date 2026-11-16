@@ -8,6 +8,17 @@ and locate certificate tables within a PE/COFF image.
 The public interface is declared in
 [`AuthenticodeLib.h`](../../Include/Library/AuthenticodeLib.h).
 
+## Image architecture support
+
+Both APIs use `PeCoffLoaderGetImageInfo()` from the linked `PeCoffLib` instance.
+The image's PE/COFF machine type must be supported by that loader for the
+current platform. An otherwise valid image with an unsupported machine type
+is rejected with `EFI_VOLUME_CORRUPTED`.
+
+The supported machine types depend on the linked loader and can include
+non-native types. A supported machine type does not necessarily mean the
+image can execute on the current system.
+
 ## PE/COFF file layout
 
 The diagram below shows a conventional **unloaded PE image**. The Authenticode

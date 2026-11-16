@@ -186,6 +186,50 @@ TEST_F (GetWinCertificatesTest, ZeroFileSize_ReturnsVolumeCorrupted) {
     );
 }
 
+TEST (AuthenticodeImageArchitectureTest, UnsupportedMachineReturnsVolumeCorrupted) {
+  std::vector<UINT8>      Image = BuildPe32PlusImage (true);
+  EFI_IMAGE_NT_HEADERS64  *Nt   = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+
+ #if defined (MDE_CPU_RISCV64)
+  Nt->FileHeader.Machine = IMAGE_FILE_MACHINE_LOONGARCH64;
+ #else
+  Nt->FileHeader.Machine = IMAGE_FILE_MACHINE_RISCV64;
+ #endif
+
+  UINT8        *AuthImage        = (UINT8 *)(UINTN)1;
+  UINTN        AuthImageSize     = 123;
+  CONST UINT8  *WinCertificates  = (CONST UINT8 *)(UINTN)1;
+  UINTN        CertificateLength = 123;
+
+  EXPECT_EQ (BuildAuthenticodeImage (Image.data (), Image.size (), &AuthImage, &AuthImageSize), EFI_VOLUME_CORRUPTED);
+  EXPECT_EQ (AuthImage, nullptr);
+  EXPECT_EQ (AuthImageSize, (UINTN)0);
+  EXPECT_EQ (GetWinCertificates (Image.data (), Image.size (), &WinCertificates, &CertificateLength), EFI_VOLUME_CORRUPTED);
+  EXPECT_EQ (WinCertificates, nullptr);
+  EXPECT_EQ (CertificateLength, (UINTN)0);
+}
+
+TEST (AuthenticodeImageArchitectureTest, SupportedArm64MachineIsAccepted) {
+  std::vector<UINT8>      Image = BuildPe32PlusImage (true);
+  EFI_IMAGE_NT_HEADERS64  *Nt   = (EFI_IMAGE_NT_HEADERS64 *)(Image.data () + kPeCoffOffset);
+
+  Nt->FileHeader.Machine = IMAGE_FILE_MACHINE_ARM64;
+
+  UINT8  *AuthImage    = NULL;
+  UINTN  AuthImageSize = 0;
+
+  ASSERT_EQ (BuildAuthenticodeImage (Image.data (), Image.size (), &AuthImage, &AuthImageSize), EFI_SUCCESS);
+  ASSERT_NE (AuthImage, nullptr);
+  FreePool (AuthImage);
+
+  CONST UINT8  *WinCertificates = NULL;
+  UINTN        Length           = 0;
+
+  ASSERT_EQ (GetWinCertificates (Image.data (), Image.size (), &WinCertificates, &Length), EFI_SUCCESS);
+  EXPECT_EQ (WinCertificates, Image.data () + kSecDirVa);
+  EXPECT_EQ (Length, (UINTN)kSecDirSize);
+}
+
 TEST_F (GetWinCertificatesTest, ElfanewPastEof_ReturnsVolumeCorrupted) {
   //
   // Valid DOS signature but e_lfanew points well past the end of the

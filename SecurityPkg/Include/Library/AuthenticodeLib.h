@@ -22,6 +22,9 @@
   CheckSum field, the Certificate Table data-directory entry, and the trailing attribute-certificate
   table excluded.
 
+  The image's PE/COFF machine type must be supported by the linked PeCoffLib instance for the
+  current platform.
+
   @param[in]   FileBuffer     In-memory PE/COFF image.
   @param[in]   FileSize       Size of FileBuffer in bytes.
   @param[out]  AuthImage      On success, a pool-allocated buffer (caller frees with FreePool ())
@@ -31,7 +34,8 @@
   @retval EFI_SUCCESS            AuthImage / AuthImageSize were populated.
   @retval EFI_INVALID_PARAMETER  A required pointer is NULL or FileSize is 0.
   @retval EFI_UNSUPPORTED        FileBuffer is an unsupported image type with no Authenticode form.
-  @retval EFI_VOLUME_CORRUPTED   The image could not be parsed or is malformed.
+  @retval EFI_VOLUME_CORRUPTED   The image could not be parsed or is malformed, including when its
+                                 machine type is unsupported by PeCoffLib.
   @retval EFI_OUT_OF_RESOURCES   An allocation failed.
 **/
 EFI_STATUS
@@ -49,6 +53,9 @@ BuildAuthenticodeImage (
   The table is a packed sequence of variable-length WIN_CERTIFICATE entries (each padded to an
   8-byte boundary); walk it by each entry's dwLength rather than indexing it as an array.
 
+  The image's PE/COFF machine type must be supported by the linked PeCoffLib instance for the
+  current platform.
+
   @param[in]   FileBuffer       In-memory PE/COFF image.
   @param[in]   FileSize         Size of FileBuffer in bytes.
   @param[out]  WinCertificates  On success, a pointer into FileBuffer to the certificate-table
@@ -59,7 +66,8 @@ BuildAuthenticodeImage (
 
   @retval EFI_SUCCESS            WinCertificates / Length were populated.
   @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
-  @retval EFI_VOLUME_CORRUPTED   The image could not be parsed or is malformed.
+  @retval EFI_VOLUME_CORRUPTED   The image could not be parsed or is malformed, including when its
+                                 machine type is unsupported by PeCoffLib.
 **/
 EFI_STATUS
 EFIAPI

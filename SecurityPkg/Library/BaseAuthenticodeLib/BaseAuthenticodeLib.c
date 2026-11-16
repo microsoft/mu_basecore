@@ -592,7 +592,8 @@ GetImageDataEnd (
   @retval EFI_SUCCESS            The Authenticode image was assembled.
   @retval EFI_INVALID_PARAMETER  A required pointer is NULL or FileSize is 0.
   @retval EFI_UNSUPPORTED        The image has no Authenticode form.
-  @retval EFI_VOLUME_CORRUPTED   The image could not be parsed.
+  @retval EFI_VOLUME_CORRUPTED   The image could not be parsed, including when its machine type is
+                                 unsupported by PeCoffLib, or its layout is malformed.
   @retval EFI_OUT_OF_RESOURCES   An allocation failed.
 **/
 EFI_STATUS
@@ -697,7 +698,8 @@ Done:
 
   @retval EFI_SUCCESS            WinCertificates / Length were populated.
   @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
-  @retval EFI_VOLUME_CORRUPTED   The image could not be parsed or is malformed.
+  @retval EFI_VOLUME_CORRUPTED   The image could not be parsed or is malformed, including when its
+                                 machine type is unsupported by PeCoffLib.
 **/
 EFI_STATUS
 EFIAPI
