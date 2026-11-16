@@ -6,22 +6,30 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 import io
+import json
 import os
-import toml
-from typing import Union
+from fnmatch import fnmatch
 from pathlib import Path
-from edk2toolext.environment.plugintypes.uefi_helper_plugin import IUefiHelperPlugin
+from typing import Optional, TypedDict, Union
+
+import toml
+from edk2toolext.environment.plugintypes.uefi_helper_plugin import HelperFunctions, IUefiHelperPlugin
 from edk2toollib.utility_functions import RunCmd
+
+RustTestResult = TypedDict(
+    "RustTestResult",
+    {"pass": list[str], "fail": list[str], "coverage": dict[str, str]},
+)
 
 
 class RustPackage:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path) -> None:
         self.path = path
         self.name = path.name
 
 
 class RustWorkspace:
-    def __init__(self, path: Union[Path, str]):
+    def __init__(self, path: Union[Path, str]) -> None:
         self.path: Path = Path(path)
         self.toml: dict = {}
         self.members: list[RustPackage] = []
@@ -29,16 +37,19 @@ class RustWorkspace:
         self.__load_toml()
         self.__set_members()
 
-    def __load_toml(self):
-        """Loads the repositories Cargo.toml file as a dictionary."""
+    def __load_toml(self) -> None:
+        """Load the repositories Cargo.toml file as a dictionary."""
         try:
             self.toml = toml.load(self.path / "Cargo.toml")
         except Exception:
             raise Exception(f"Failed to load Cargo.toml from {self.path}")
 
-    def __set_members(self):
-        """Finds all members of the workspace."""
+    def __set_members(self) -> None:
+        """Find all members of the workspace."""
         workspace = self.toml.get("workspace")
+        if workspace is None:
+            return
+
         member_paths = set()
 
         # Grab all members specifically specified in the workspace
@@ -48,15 +59,22 @@ class RustWorkspace:
         # Build a dep list that only contains dependencies with a path. These are workspace
         # members.
         dep_list = workspace["dependencies"]
-        dep_list = [dep_list[dep] for dep in dep_list if not isinstance(dep_list[dep], str) and dep_list[dep].get("path")]
+        dep_list = [
+            dep_list[dep] for dep in dep_list if not isinstance(dep_list[dep], str) and dep_list[dep].get("path")
+        ]
 
         for dep in dep_list:
             member_paths.add(self.path / dep["path"])
 
         self.members = [RustPackage(path) for path in member_paths]
 
-    def test(self, pkg_list: list[str] = None, ignore_list: list[str] = None, report_type: str = "html", coverage: bool = True):
-        """Runs tests on a list of rust packages / crates.
+    def test(
+        self,
+        pkg_list: Optional[list[str]] = None,
+        ignore_list: Optional[list[str]] = None,
+        coverage: bool = True,
+    ) -> RustTestResult:
+        """Run tests on a list of rust packages / crates.
 
         Will additionally calculate code coverage if coverage is set to True.
         """
@@ -65,16 +83,8 @@ class RustWorkspace:
 
         # Set up the command
         command = "cargo"
-        params = "make"
-
-        if coverage:
-            if ignore_list:
-                params += f' -e COV_FLAGS="--out {report_type} --exclude-files {" --exclude-files ".join(ignore_list)}"'
-            else:
-                params += f' -e COV_FLAGS="--out {report_type}"'
-            params += f" coverage {','.join(pkg_list)}"
-        else:
-            params += f" test {','.join(pkg_list)}"
+        task = "coverage-ci" if coverage else "test"
+        params = f"make {task} {','.join(pkg_list)}"
 
         # Run the command
         output = io.StringIO()
@@ -82,11 +92,7 @@ class RustWorkspace:
         output.seek(0)
         lines = output.readlines()
 
-        result = {
-            "pass": [],
-            "fail": [],
-            "coverage": {}
-        }
+        result: RustTestResult = {"pass": [], "fail": [], "coverage": {}}
 
         # Determine passed and failed tests
         for line in lines:
@@ -114,26 +120,36 @@ class RustWorkspace:
         if not coverage:
             return result
 
-        # Determine coverage if all tests passed
-        for line in lines:
-            line = line.strip().strip("\n")
-            if line.startswith("|| Tested/Total Lines"):
-                continue
+        report_path = self.path / "target" / "coverage.json"
+        try:
+            with report_path.open(encoding="utf-8") as report:
+                coverage_report = json.load(report)
 
-            if line == "||":
-                continue
+            workspace_path = self.path.resolve()
+            for data in coverage_report["data"]:
+                for file in data["files"]:
+                    path = workspace_path / file["filename"]
+                    relative_path = path.relative_to(workspace_path) if path.is_relative_to(workspace_path) else path
+                    if ignore_list and any(
+                        fnmatch(relative_path.as_posix(), pattern.replace("\\", "/"))
+                        or fnmatch(path.as_posix(), pattern.replace("\\", "/"))
+                        for pattern in ignore_list
+                    ):
+                        continue
 
-            if line.startswith("||"):
-                line = line.replace("|| ", "")
-                path, cov = line.split(":")
-                cov = cov.split()[0]
-                result["coverage"][path] = cov
+                    line_coverage = file["summary"]["lines"]
+                    if line_coverage["count"] > 0:
+                        result["coverage"][relative_path.as_posix()] = (
+                            f'{line_coverage["covered"]}/{line_coverage["count"]}'
+                        )
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            raise RuntimeError(f"Failed to read LLVM coverage report {report_path}: {error}") from error
 
         return result
 
 
 class RustPackageHelper(IUefiHelperPlugin):
-    def RegisterHelpers(self, obj):
+    def RegisterHelpers(self, obj: HelperFunctions) -> None:
         fp = os.path.abspath(__file__)
         obj.Register("RustPackage", RustPackage, fp)
         obj.Register("RustWorkspace", RustWorkspace, fp)

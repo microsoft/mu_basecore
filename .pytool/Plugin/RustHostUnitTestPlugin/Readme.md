@@ -3,6 +3,13 @@
 This CI plugin runs all unit tests and requires that they pass. If code coverage is turned on with
 `"CalculateCoverage": true`, then coverage percentages will be calculated on a per rust crate basis.
 
+Coverage runs use `cargo make coverage-ci` to run tests and generate JSON and Cobertura reports.
+Thresholds use line counts from `target/coverage.json`, excluding ignored paths and files with no
+executable lines. These exclusions do not filter the generated reports.
+The plugin publishes `target/cobertura.xml` to `Build/coverage.xml` with `.` as the source directory.
+Report read or publication errors fail CI. With coverage disabled, `cargo make test` runs without
+requiring coverage reports.
+
 ## Plugin Customizations
 
 - `CalculateCoverage`: true / false - Whether or not to calculate coverage results

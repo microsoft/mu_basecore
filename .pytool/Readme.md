@@ -114,6 +114,9 @@ python -m pip install -r pip-requirements.txt
 python .pytool/Tests/PythonToolsTests.py
 ```
 
+The runner includes the ImageValidation and RustHostUnitTestPlugin suites, plus the
+[RustPackageHelper tests](Plugin/RustPackageHelper/tests).
+
 ## Current PyTool Test Capabilities
 
 All CI tests are instances of EDKII Tools plugins. Documentation on the plugin

@@ -1,32 +1,49 @@
 # @file
-# A CI plugin used to run cargo tarpaulin for all host based tests.
+# A CI plugin used to run host based tests with cargo make and llvm-cov coverage.
 # Ensures that all host based tests pass and meet code coverage requirements.
 #
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
-from edk2toolext.environment.plugintypes.ci_build_plugin import ICiBuildPlugin
-from typing import List
-from edk2toolext.environment.repo_resolver import repo_details
-from pathlib import Path
-import re
 import logging
 import platform
+import re
+from pathlib import Path
+from typing import TextIO
+
+from edk2toolext.environment.plugin_manager import PluginManager
+from edk2toolext.environment.plugintypes.ci_build_plugin import ICiBuildPlugin
+from edk2toolext.environment.plugintypes.uefi_helper_plugin import HelperFunctions
+from edk2toolext.environment.repo_resolver import repo_details
+from edk2toolext.environment.var_dict import VarDict
+from edk2toollib.log.junit_report_format import JunitReportTestCase
+from edk2toollib.uefi.edk2.path_utilities import Edk2Path
+
 
 class RustHostUnitTestPlugin(ICiBuildPlugin):
     def GetTestName(self, packagename: str, environment: object) -> tuple[str, str]:
-        return (f'Host Unit Tests in {packagename}', f'{packagename}.RustHostUnitTestPlugin')
+        return (f"Host Unit Tests in {packagename}", f"{packagename}.RustHostUnitTestPlugin")
 
-    def RunsOnTargetList(self) -> List[str]:
+    def RunsOnTargetList(self) -> list[str]:
         return ["NO-TARGET"]
 
-    def RunBuildPlugin(self, packagename, Edk2pathObj, pkgconfig, environment, PLM, PLMHelper, tc, output_stream):
+    def RunBuildPlugin(
+        self,
+        packagename: str,
+        Edk2pathObj: Edk2Path,
+        pkgconfig: dict,
+        environment: VarDict,
+        PLM: PluginManager,
+        PLMHelper: HelperFunctions,
+        tc: JunitReportTestCase,
+        output_stream: TextIO,
+    ) -> int:
         ws = Edk2pathObj.WorkspacePath
         rust_ws = PLMHelper.RustWorkspace(ws)  # .pytool/Plugin/RustPackageHelper
 
         with_coverage = pkgconfig.get("CalculateCoverage", True)
 
-        if platform.system() == "Windows" and platform.machine() == 'ARM64':
+        if platform.system() == "Windows" and platform.machine() == "ARM64":
             logging.debug("Coverage skipped by plugin, not supported on Windows ARM")
             with_coverage = False
 
@@ -53,7 +70,7 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
 
         # Run tests and evaluate results
         try:
-            results = rust_ws.test(crate_name_list, ignore_list = ignore_list, report_type = "xml", coverage=with_coverage)
+            results = rust_ws.test(crate_name_list, ignore_list=ignore_list, coverage=with_coverage)
         except RuntimeError as e:
             logging.warning(str(e))
             tc.LogStdError(str(e))
@@ -63,17 +80,17 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
         # Evaluate unit test results
         failed = 0
         for test in results["pass"]:
-            tc.LogStdOut(f'{test} ... PASS')
+            tc.LogStdOut(f"{test} ... PASS")
 
         for test in results["fail"]:
-            e = f'{test} ... FAIL'
+            e = f"{test} ... FAIL"
             logging.warning(e)
             tc.LogStdError(e)
             failed += 1
 
         # If we failed a unit test, we have no coverage data to evaluate
         if failed > 0:
-            tc.SetFailed(f'Host unit tests failed. Failures {failed}', "CHECK_FAILED")
+            tc.SetFailed(f"Host unit tests failed. Failures {failed}", "CHECK_FAILED")
             return failed
 
         # Return if we are not running with coverage
@@ -85,11 +102,7 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
         coverage = {}
         for file, cov in results["coverage"].items():
             try:
-                package = next(
-                    crate.name
-                    for crate in rust_ws.members
-                    if Path(ws, file).is_relative_to(crate.path)
-                )
+                package = next(crate.name for crate in rust_ws.members if Path(ws, file).is_relative_to(crate.path))
             except StopIteration:
                 continue
             covered, total = cov.split("/")
@@ -106,32 +119,35 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
 
             calc_cov = round(cov["cov"] / cov["total"], 2)
             if calc_cov >= required_cov:
-                tc.LogStdOut(f'coverage::{pkg}: {calc_cov} greater than {required_cov} ... PASS')
+                tc.LogStdOut(f"coverage::{pkg}: {calc_cov} greater than {required_cov} ... PASS")
             else:
-                e = f'coverage::{pkg}: {calc_cov}% less than {required_cov}% ... FAIL'
+                e = f"coverage::{pkg}: {calc_cov}% less than {required_cov}% ... FAIL"
                 logging.warning(e)
                 tc.LogStdError(e)
                 failed += 1
 
-        # Move coverage.xml to Build Directory
+        # Publish the Cobertura report generated by coverage-ci.
         xml = Path(rust_ws.path) / "target" / "cobertura.xml"
-        if xml.exists():
-            out = Path(rust_ws.path) / "Build"
-
-            if (out / "coverage.xml").exists():
-                (out / "coverage.xml").unlink()
-            xml = xml.rename(out / "coverage.xml")
-
-            with open(xml, 'r') as f:
-                contents = f.read()
-                contents = re.sub(r'<source>(.*?)</source>', r'<source>.</source>', contents)
-
-            with open (xml, "w") as f:
-                f.write(contents)
+        try:
+            if xml.exists():
+                contents = xml.read_text(encoding="utf-8")
+                contents = re.sub(r"<source>(.*?)</source>", r"<source>.</source>", contents)
+                xml.write_text(contents, encoding="utf-8")
+                out = Path(rust_ws.path) / "Build"
+                out.mkdir(parents=True, exist_ok=True)
+                xml.replace(out / "coverage.xml")
+            else:
+                logging.warning(f"Cobertura coverage report not found: {xml}; skipping publication.")
+        except (OSError, UnicodeError) as error:
+            message = f"Failed to publish Cobertura coverage report {xml}: {error}"
+            logging.warning(message)
+            tc.LogStdError(message)
+            tc.SetFailed(message, "CHECK_FAILED")
+            return failed + 1
 
         # Return
         if failed > 0:
-            tc.SetFailed(f'Coverage requirements not met. Failures {failed}', "CHECK_FAILED")
+            tc.SetFailed(f"Coverage requirements not met. Failures {failed}", "CHECK_FAILED")
         else:
             tc.SetSuccess()
 
