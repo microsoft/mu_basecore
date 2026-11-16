@@ -484,6 +484,7 @@ class TestValidationIntegration(ImageValidationTestCase):
 
     def test_each_registered_requirement_can_fail_validation(self) -> None:
         """Catch missing registration as well as disabled individual checks."""
+        self.plugin.config_data["IMAGE_FILE_MACHINE_AMD64"]["DEFAULT"]["IMAGE_BASE"] = 0
         for base, alignment, characteristics in (
             (0x100000, 0x1000, 0x20000000),
             (0, 0x2000, 0x20000000),
