@@ -40,6 +40,11 @@
   #
   PlatformSecureLib|Include/Library/PlatformSecureLib.h
 
+  # MU_CHANGE [BEGIN] - ECIT libraries.
+  ## @libraryclass Reports ECIT features to the ECIT collector.
+  CryptoIndicatorRegistrationLib|Include/Library/CryptoIndicatorRegistrationLib.h
+  # MU_CHANGE [END]
+
   ##  @libraryclass  Provides interfaces to handle TPM 1.2 request.
   #
   TcgPhysicalPresenceLib|Include/Library/TcgPhysicalPresenceLib.h
@@ -312,7 +317,20 @@
   #  Include/Guid/Tpm2ServiceFfa.h
   gTpm2ServiceFfaGuid = { 0x17b862a4, 0x1806, 0x4faf, { 0x86, 0xb3, 0x08, 0x9a, 0x58, 0x35, 0x38, 0x61 } }
 
+  # MU_CHANGE [BEGIN] - ECIT phase transport.
+  ## Include/Guid/CryptoIndicatorMmBridge.h
+  gEcitMmBridgeHandlerGuid = { 0x7b1e2c9a, 0x4f83, 0x4a16, { 0x9d, 0x5c, 0x3e, 0x77, 0x21, 0x0b, 0x64, 0xa8 } }
+
+  ## Include/Guid/EcitCapabilityHob.h
+  gEdkiiEcitCapabilityHobGuid = { 0x68bba5c8, 0xc647, 0x4aec, { 0xb7, 0x7d, 0xeb, 0x11, 0x37, 0x1d, 0x05, 0x72 } }
+  # MU_CHANGE [END]
+
 [Protocols]
+  # MU_CHANGE [BEGIN] - ECIT registration protocol.
+  ## Include/Protocol/CryptoIndicatorRegistration.h
+  gEfiCryptoIndicatorRegistrationProtocolGuid = { 0x2b9a1f74, 0x3c6e, 0x4d18, { 0x9a, 0x2f, 0xd7, 0x0e, 0x4c, 0x11, 0x83, 0x55 } }
+  # MU_CHANGE [END]
+
   ## Protocol used to test dynamic TCG log scaling functionality. This is a private protocol with visibility to
   ## only the TestApp and DXE driver.
   # Tcg/TcgLogTest/TcgLogTest.h

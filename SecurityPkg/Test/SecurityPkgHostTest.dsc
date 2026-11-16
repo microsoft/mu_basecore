@@ -26,6 +26,30 @@
   RngLib|MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
 
 [Components]
+  # MU_CHANGE [BEGIN] - ECIT host tests.
+  SecurityPkg/CryptoIndicatorTable/GoogleTest/CryptoIndicatorTableDxeGoogleTest.inf {
+    <LibraryClasses>
+      HobLib|MdePkg/Test/Mock/Library/GoogleTest/MockHobLib/MockHobLib.inf
+      UefiBootServicesTableLib|MdePkg/Test/Mock/Library/GoogleTest/MockUefiBootServicesTableLib/MockUefiBootServicesTableLib.inf
+      UefiLib|MdePkg/Test/Mock/Library/GoogleTest/MockUefiLib/MockUefiLib.inf
+    <PcdsFixedAtBuild>
+      gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId|{0x4D, 0x53, 0x46, 0x54, 0x20, 0x20}
+      gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId|0x545345544943454D
+      gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemRevision|1
+      gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId|0x5453464D
+      gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorRevision|1
+  }
+  SecurityPkg/Library/CryptoIndicatorRegistrationLib/GoogleTest/CryptoIndicatorRegistrationLibPeiGoogleTest.inf {
+    <LibraryClasses>
+      CryptoIndicatorRegistrationLib|SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibPei.inf
+      HobLib|MdePkg/Test/Mock/Library/GoogleTest/MockHobLib/MockHobLib.inf
+  }
+  SecurityPkg/Library/CryptoIndicatorRegistrationLib/GoogleTest/CryptoIndicatorRegistrationLibStandaloneMmGoogleTest.inf {
+    <LibraryClasses>
+      MmServicesTableLib|MdePkg/Test/Mock/Library/GoogleTest/MockMmServicesTableLib/MockMmServicesTableLib.inf
+  }
+  # MU_CHANGE [END]
+
   SecurityPkg/Library/SecureBootVariableLib/UnitTest/MockUefiRuntimeServicesTableLib.inf
   SecurityPkg/Library/SecureBootVariableLib/UnitTest/MockPlatformPKProtectionLib.inf
   SecurityPkg/Library/SecureBootVariableLib/UnitTest/MockUefiLib.inf
