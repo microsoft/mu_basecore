@@ -1,0 +1,29 @@
+## @file
+#  Unit tests for EcitEncodingLib.
+#
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = EcitEncodingLibUnitTest
+  FILE_GUID                      = BDAA4862-60F4-45CE-8DA6-FB4E9D27BAF8
+  MODULE_TYPE                    = HOST_APPLICATION
+  VERSION_STRING                 = 1.0
+
+[Sources]
+  EcitEncodingLibUnitTest.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  CryptoPkg/CryptoPkg.dec
+  SecurityPkg/SecurityPkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  BaseMemoryLib
+  EcitEncodingLib
+  MemoryAllocationLib
+  UnitTestLib

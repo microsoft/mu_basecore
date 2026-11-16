@@ -44,6 +44,10 @@
       CryptoIndicatorRegistrationLib|SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibPei.inf
       HobLib|MdePkg/Test/Mock/Library/GoogleTest/MockHobLib/MockHobLib.inf
   }
+  SecurityPkg/Library/EcitEncodingLib/UnitTest/EcitEncodingLibUnitTest.inf {
+    <LibraryClasses>
+      EcitEncodingLib|SecurityPkg/Library/EcitEncodingLib/EcitEncodingLib.inf
+  }
   SecurityPkg/Library/CryptoIndicatorRegistrationLib/GoogleTest/CryptoIndicatorRegistrationLibStandaloneMmGoogleTest.inf {
     <LibraryClasses>
       MmServicesTableLib|MdePkg/Test/Mock/Library/GoogleTest/MockMmServicesTableLib/MockMmServicesTableLib.inf

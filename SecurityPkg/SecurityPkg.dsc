@@ -83,6 +83,7 @@
   VariablePolicyHelperLib|MdeModulePkg/Library/VariablePolicyHelperLib/VariablePolicyHelperLib.inf
   OemTpm2InitLib|SecurityPkg/Library/OemTpm2InitLibNull/OemTpm2InitLib.inf               ## MU_CHANGE
   Hash2CryptoLib|SecurityPkg/Library/BaseHash2CryptoLibNull/BaseHash2CryptoLibNull.inf   ## MU_CHANGE
+  EcitEncodingLib|SecurityPkg/Library/EcitEncodingLib/EcitEncodingLib.inf  # MU_CHANGE
   CryptoIndicatorRegistrationLib|SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibNull.inf  # MU_CHANGE
 
   SpdmSecurityLib|SecurityPkg/DeviceSecurity/SpdmSecurityLib/SpdmSecurityLib.inf
@@ -222,6 +223,7 @@
   SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibNull.inf
   SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibPei.inf
   SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibStandaloneMm.inf
+  SecurityPkg/Library/EcitEncodingLib/EcitEncodingLib.inf
   # MU_CHANGE [END]
 
   SecurityPkg/Library/DxeImageVerificationLib/DxeImageVerificationLib.inf
