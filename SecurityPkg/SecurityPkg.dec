@@ -43,6 +43,9 @@
   # MU_CHANGE [BEGIN] - ECIT libraries.
   ## @libraryclass Reports ECIT features to the ECIT collector.
   CryptoIndicatorRegistrationLib|Include/Library/CryptoIndicatorRegistrationLib.h
+
+  ## @libraryclass Encodes structured capabilities as ECIT EntryData.
+  EcitEncodingLib|Include/Library/EcitEncodingLib.h
   # MU_CHANGE [END]
 
   ##  @libraryclass  Provides interfaces to handle TPM 1.2 request.
