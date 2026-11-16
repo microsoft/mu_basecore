@@ -11,6 +11,7 @@
 #include <GoogleTest/Library/MockUefiLib.h>
 
 #include <vector>
+#include <string>
 
 extern "C" {
   #include <Uefi.h>
@@ -38,6 +39,12 @@ extern "C" {
     IN EFI_SYSTEM_TABLE  *SystemTable
     );
 
+  EFI_STATUS
+  EFIAPI
+  DumpCryptoIndicatorTableEntryPoint (
+    IN EFI_HANDLE        ImageHandle,
+    IN EFI_SYSTEM_TABLE  *SystemTable
+    );
 }
 
 using ::testing::_;
@@ -45,8 +52,40 @@ using ::testing::Invoke;
 using ::testing::Return;
 using ::testing::StrictMock;
 
+static std::string  mDumpOutput;
 static UINTN        mBridgedRecords;
 
+/**
+  Capture a formatted ASCII string emitted by the dump application.
+
+  @param[in] Format  Expected to be "%a", followed by the string to capture.
+  @return Zero; the captured output is available in mDumpOutput.
+**/
+extern "C"
+UINTN
+EFIAPI
+AsciiPrint (
+  IN CONST CHAR8  *Format,
+  ...
+  )
+{
+  VA_LIST  Marker;
+
+  EXPECT_STREQ (Format, "%a");
+  VA_START (Marker, Format);
+  mDumpOutput += VA_ARG (Marker, CONST CHAR8 *);
+  VA_END (Marker);
+  return 0;
+}
+
+/**
+  Check and count a capability forwarded by the test bridge.
+
+  @param[in] FeatureIdentifier  Feature owning the capability.
+  @param[in] EntryData          Expected one-byte test payload.
+  @param[in] EntryDataSize      Payload size in bytes.
+  @retval EFI_SUCCESS           The mock consumed the record.
+**/
 extern "C"
 EFI_STATUS
 EFIAPI
@@ -63,6 +102,16 @@ EcitRegisterCryptoCapability (
   return EFI_SUCCESS;
 }
 
+/**
+  Return one sample record from a transport limited to a single page.
+
+  @param[in]     This      Mock MM communication protocol.
+  @param[in,out] Physical  Physical address of the communication buffer.
+  @param[in,out] Virtual   Virtual address used to fill the response.
+  @param[in,out] CommSize  Size of the supplied buffer in bytes.
+  @retval EFI_SUCCESS            The response contains one record.
+  @retval EFI_INVALID_PARAMETER  The request exceeded one page.
+**/
 static
 EFI_STATUS
 EFIAPI
@@ -92,6 +141,7 @@ CommunicateOnePage (
   return EFI_SUCCESS;
 }
 
+/** Verify that the bridge imports one MM record at ReadyToBoot. **/
 TEST (CryptoIndicatorBridgeDxeTest, ImportsRecordsThroughOnePageTransport) {
   StrictMock<MockUefiBootServicesTableLib>  BootServices;
   StrictMock<MockUefiLib>                   UefiLib;
@@ -126,6 +176,90 @@ TEST (CryptoIndicatorBridgeDxeTest, ImportsRecordsThroughOnePageTransport) {
   EXPECT_EQ (mBridgedRecords, 1U);
 }
 
+/** A missing MM protocol or communicate method must not publish a record. **/
+TEST (CryptoIndicatorBridgeDxeTest, SkipsUnusableTransport) {
+  StrictMock<MockUefiBootServicesTableLib>  BootServices;
+  StrictMock<MockUefiLib>                   UefiLib;
+  EFI_MM_COMMUNICATION2_PROTOCOL            MmComm = { };
+  EFI_EVENT_NOTIFY                          Notify = nullptr;
+
+  mBridgedRecords = 0;
+  EXPECT_CALL (UefiLib, EfiCreateEventReadyToBootEx (TPL_NOTIFY, _, _, _))
+    .WillRepeatedly (::testing::DoAll (::testing::SaveArg<1> (&Notify), ::testing::SetArgPointee<3> (nullptr), Return (EFI_SUCCESS)));
+  EXPECT_CALL (BootServices, gBS_LocateProtocol (_, nullptr, _))
+    .WillOnce (::testing::DoAll (::testing::SetArgPointee<2> (nullptr), Return (EFI_SUCCESS)))
+    .WillOnce (::testing::DoAll (::testing::SetArgPointee<2> (&MmComm), Return (EFI_SUCCESS)));
+  EXPECT_CALL (BootServices, gBS_CloseEvent (_)).Times (2).WillRepeatedly (Return (EFI_SUCCESS));
+  for (UINTN Index = 0; Index < 2; Index++) {
+    ASSERT_EQ (CryptoIndicatorBridgeDxeEntryPoint (nullptr, nullptr), EFI_SUCCESS);
+    ASSERT_NE (Notify, nullptr);
+    Notify (nullptr, nullptr);
+  }
+
+  EXPECT_EQ (mBridgedRecords, 0U);
+}
+
+/** A successful configuration table lookup may still return no ECIT pointer. **/
+TEST (DumpCryptoIndicatorTableTest, ReportsNullConfigurationTable) {
+  StrictMock<MockUefiLib>  UefiLib;
+
+  EXPECT_CALL (UefiLib, EfiGetSystemConfigurationTable (&gEfiCryptoIndicatorTableGuid, _))
+    .WillOnce (::testing::DoAll (::testing::SetArgPointee<1> (nullptr), Return (EFI_SUCCESS)));
+  mDumpOutput.clear ();
+  EXPECT_EQ (DumpCryptoIndicatorTableEntryPoint (nullptr, nullptr), EFI_NOT_FOUND);
+  EXPECT_NE (mDumpOutput.find ("ECIT: not installed"), std::string::npos);
+}
+
+/** Verify that the dump parser never reads beyond the declared payload. **/
+TEST (DumpCryptoIndicatorTableTest, BoundsCsvParsingToEntryPayload) {
+  StrictMock<MockUefiLib>  UefiLib;
+  CONST UINTN              TableSize = sizeof (EFI_CRYPTO_INDICATOR_TABLE) + sizeof (EFI_CRYPTO_INDICATOR_ENTRY) + 8;
+  std::vector<UINT8>       Buffer (TableSize + 1, 0);
+  auto                     Table   = (EFI_CRYPTO_INDICATOR_TABLE *)Buffer.data ();
+  auto                     Entry   = (EFI_CRYPTO_INDICATOR_ENTRY *)(Table + 1);
+  auto                     Payload = (CHAR8 *)(Entry + 1);
+
+  CopyMem (Table->Signature, "ECIT", 4);
+  Table->Length          = (UINT32)TableSize;
+  Table->NumberOfEntries = 1;
+  CopyGuid (&Entry->FeatureIdentifier, &gEfiEcitFeatureSbImageVerificationGuid);
+  Entry->EntryLength = sizeof (*Entry) + 8;
+  CopyMem (Payload, "1.2.3.45", 8);
+
+  EXPECT_CALL (UefiLib, EfiGetSystemConfigurationTable (_, _))
+    .Times (3)
+    .WillRepeatedly (
+       Invoke (
+         [Table] (CONST EFI_GUID *, VOID **Result) {
+    *Result = Table;
+    return EFI_SUCCESS;
+  }
+         )
+       );
+
+  for (UINTN Case = 0; Case < 3; Case++) {
+    if (Case == 1) {
+      Payload[7] = '\0';
+    } else if (Case == 2) {
+      Payload[0] = '\0';
+    }
+
+    Table->Checksum = 0;
+    Table->Checksum = CalculateCheckSum8 (Buffer.data (), TableSize);
+    mDumpOutput.clear ();
+    EXPECT_EQ (DumpCryptoIndicatorTableEntryPoint (nullptr, nullptr), EFI_SUCCESS);
+    if (Case == 0) {
+      EXPECT_NE (mDumpOutput.find ("missing NUL terminator"), std::string::npos);
+    } else if (Case == 1) {
+      EXPECT_EQ (mDumpOutput.find ("malformed"), std::string::npos);
+      EXPECT_NE (mDumpOutput.find ("UnknownOids:"), std::string::npos);
+    } else {
+      EXPECT_NE (mDumpOutput.find ("(none)"), std::string::npos);
+    }
+  }
+}
+
+/** Verify that PEI and DXE records are copied, sealed, and published together. **/
 TEST (CryptoIndicatorTableDxeTest, RegistersAndPublishesEntries) {
   StrictMock<MockHobLib>                      HobLib;
   StrictMock<MockUefiBootServicesTableLib>    BootServices;
@@ -281,6 +415,13 @@ TEST (CryptoIndicatorTableDxeTest, RegistersAndPublishesEntries) {
   FreePool (PublishedTable);
 }
 
+/**
+  Run the ECIT host tests.
+
+  @param[in] argc  Number of command-line arguments.
+  @param[in] argv  Command-line arguments for GoogleTest.
+  @return GoogleTest exit status.
+**/
 int
 main (
   int   argc,

@@ -224,6 +224,7 @@
   SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibPei.inf
   SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibStandaloneMm.inf
   SecurityPkg/Library/EcitEncodingLib/EcitEncodingLib.inf
+  SecurityPkg/Application/DumpCryptoIndicatorTable/DumpCryptoIndicatorTable.inf
   # MU_CHANGE [END]
 
   SecurityPkg/Library/DxeImageVerificationLib/DxeImageVerificationLib.inf
