@@ -52,6 +52,12 @@
     <LibraryClasses>
       MmServicesTableLib|MdePkg/Test/Mock/Library/GoogleTest/MockMmServicesTableLib/MockMmServicesTableLib.inf
   }
+  SecurityPkg/Library/AuthVariableLib/GoogleTest/EcitAuthVariableReportingTest.inf {
+    <LibraryClasses>
+      BaseCryptLib|CryptoPkg/Test/Mock/Library/GoogleTest/MockBaseCryptLib/MockBaseCryptLib.inf
+      EcitEncodingLib|SecurityPkg/Library/EcitEncodingLib/EcitEncodingLib.inf
+      PlatformSecureLib|SecurityPkg/Library/PlatformSecureLibNull/PlatformSecureLibNull.inf
+  }
   SecurityPkg/Library/DxeImageVerificationLib/GoogleTest/DxeImageVerificationLibEcitGoogleTest.inf {
     <LibraryClasses>
       BaseCryptLib|CryptoPkg/Test/Mock/Library/GoogleTest/MockBaseCryptLib/MockBaseCryptLib.inf
