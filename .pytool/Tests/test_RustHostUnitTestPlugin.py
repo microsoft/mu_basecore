@@ -199,6 +199,46 @@ class TestRustHostUnitTestPlugin(unittest.TestCase):
                 self.tc.SetSuccess.assert_called_once_with()
                 self.assertFalse(self.destination.exists())
 
+    def test_package_with_only_excluded_dependency_skips_tests(self) -> None:
+        """Do not invoke Cargo for an EDK2 package containing only an excluded crate."""
+        for excluded_path in ("TestPkg/excluded_crate", "TestPkg"):
+            with self.subTest(excluded_path=excluded_path):
+                self.run_cmd.reset_mock()
+                self.tc.reset_mock()
+                (self.root / "Cargo.toml").write_text(
+                    '[workspace]\nmembers = ["OtherPkg/other_crate"]\n'
+                    f'exclude = ["{excluded_path}"]\n'
+                    "[workspace.dependencies]\n"
+                    'excluded_crate = { path = "TestPkg/excluded_crate" }\n',
+                    encoding="utf-8",
+                )
+
+                self.assertEqual(self._run_plugin({}), -1)
+
+                self.run_cmd.assert_not_called()
+                self.tc.SetSkipped.assert_called_once_with()
+                self.tc.SetSuccess.assert_not_called()
+                self.tc.SetFailed.assert_not_called()
+
+    def test_explicit_member_overrides_workspace_exclusion(self) -> None:
+        """Run tests rather than silently skipping an explicitly included crate."""
+        (self.root / "Cargo.toml").write_text(
+            '[workspace]\nmembers = ["TestPkg/test_crate"]\n'
+            'exclude = ["TestPkg/test_crate"]\n'
+            "[workspace.dependencies]\n"
+            'test_crate = { path = "TestPkg/test_crate" }\n',
+            encoding="utf-8",
+        )
+
+        self.assertEqual(self._run_plugin({"CalculateCoverage": False}), 0)
+
+        self.run_cmd.assert_called_once_with(
+            "cargo", "make test test_crate", workingdir=self.root, outstream=ANY
+        )
+        self.tc.SetSuccess.assert_called_once_with()
+        self.tc.SetSkipped.assert_not_called()
+        self.tc.SetFailed.assert_not_called()
+
     def test_helper_report_error_fails_ci(self) -> None:
         """Propagate a missing LLVM JSON report as a failed CI check."""
         with self.assertLogs(level="WARNING"):
