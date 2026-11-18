@@ -528,6 +528,8 @@ TestTrustAnchorBadParameters (
   //
   Status = GetTrustAnchorX509FromAuthData (NULL, &mSha256Guid, Hash, sizeof (Hash), AuthData, 0, &FoundCert, &FoundCertSize);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
+  Status = GetTrustAnchorX509FromAuthData (NULL, &mSha256Guid, Hash, sizeof (Hash), AuthData, MAX_UINTN, &FoundCert, &FoundCertSize);
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
 
   //
   // NULL output pointer

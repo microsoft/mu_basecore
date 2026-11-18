@@ -8,6 +8,7 @@
 **/
 
 #include "TestBaseCryptLib.h"
+#include "CmsTestData.h"
 
 //
 // Password-protected PEM Key data for RSA Private Key Retrieving (encryption key is "client").
@@ -544,6 +545,7 @@ TestX509IsPublicKeySupported (
   )
 {
   UINT8  InvalidCert[] = { 0x30, 0x82, 0x00, 0x01, 0x00 };
+  UINT8  EvenExponentCert[sizeof (mCmsCert)];
   UINT8  *UnsupportedPublicKeyCert;
   UINTN  Index;
 
@@ -563,6 +565,12 @@ TestX509IsPublicKeySupported (
   UT_ASSERT_FALSE (X509IsPublicKeySupported (UnsupportedPublicKeyCert, sizeof (TestCert)));
   UT_ASSERT_FALSE (X509IsPublicKeySupported (NULL, 0));
   UT_ASSERT_FALSE (X509IsPublicKeySupported (InvalidCert, sizeof (InvalidCert)));
+  UT_ASSERT_FALSE (X509IsPublicKeySupported (TestCert, sizeof (TestCert) - 1));
+  CopyMem (EvenExponentCert, mCmsCert, sizeof (EvenExponentCert));
+  // The fixture's RSA public exponent is the DER INTEGER 65537.
+  UT_ASSERT_MEM_EQUAL (EvenExponentCert + 433, "\x02\x03\x01\x00\x01", 5);
+  EvenExponentCert[437] = 2;
+  UT_ASSERT_FALSE (X509IsPublicKeySupported (EvenExponentCert, sizeof (EvenExponentCert)));
 
   FreePool (UnsupportedPublicKeyCert);
 
@@ -763,6 +771,72 @@ TestCmsGetSignerInfoNumInvalidData (
   return UNIT_TEST_PASSED;
 }
 
+STATIC
+UNIT_TEST_STATUS
+EFIAPI
+TestCmsVerifyInvalidInput (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  UINT8  Invalid = 0;
+  UINT8  *Chain;
+  UINTN  ChainSize;
+  UINTN  Index;
+
+  Chain     = &Invalid;
+  ChainSize = MAX_UINTN;
+  UT_ASSERT_FALSE (CmsVerify (mCmsData, sizeof (mCmsData), mCmsCert, sizeof (mCmsCert), &Invalid, 1, &Chain, &ChainSize));
+  UT_ASSERT_TRUE (Chain == NULL);
+  UT_ASSERT_EQUAL (ChainSize, 0);
+  Chain = &Invalid;
+  UT_ASSERT_FALSE (CmsVerify (mCmsData, sizeof (mCmsData), mCmsCert, sizeof (mCmsCert), mCmsMessage, sizeof (mCmsMessage), &Chain, NULL));
+  UT_ASSERT_TRUE (Chain == NULL);
+  ChainSize = MAX_UINTN;
+  UT_ASSERT_FALSE (CmsVerify (mCmsData, sizeof (mCmsData), mCmsCert, sizeof (mCmsCert), mCmsMessage, sizeof (mCmsMessage), NULL, &ChainSize));
+  UT_ASSERT_EQUAL (ChainSize, 0);
+  for (Index = 0; Index < 17; Index++) {
+    UT_ASSERT_EQUAL (CmsGetSignerInfoNum (mCmsData, Index), 0);
+  }
+
+  return UNIT_TEST_PASSED;
+}
+
+STATIC
+UNIT_TEST_STATUS
+EFIAPI
+TestCmsVerifiedChain (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  UINT8  *Chain;
+  UINTN  ChainSize;
+
+  if (!CmsVerify (mCmsData, sizeof (mCmsData), mCmsCert, sizeof (mCmsCert), mCmsMessage, sizeof (mCmsMessage), NULL, NULL)) {
+    UT_LOG_WARNING ("Detached RSA/SHA-256 CMS verification unavailable\n");
+    return UNIT_TEST_SKIPPED;
+  }
+
+  Chain     = NULL;
+  ChainSize = 0;
+  if (!CmsVerify (mCmsData, sizeof (mCmsData), mCmsCert, sizeof (mCmsCert), mCmsMessage, sizeof (mCmsMessage), &Chain, &ChainSize)) {
+    UT_ASSERT_TRUE (Chain == NULL);
+    UT_ASSERT_EQUAL (ChainSize, 0);
+    return UNIT_TEST_SKIPPED;
+  }
+
+  if (Chain != NULL) {
+    UT_ASSERT_EQUAL (ChainSize, 1 + sizeof (UINT32) + sizeof (mCmsCert));
+    UT_ASSERT_EQUAL (Chain[0], 1);
+    UT_ASSERT_EQUAL (ReadUnaligned32 ((CONST UINT32 *)(Chain + 1)), sizeof (mCmsCert));
+    UT_ASSERT_MEM_EQUAL (Chain + 1 + sizeof (UINT32), mCmsCert, sizeof (mCmsCert));
+    FreePool (Chain);
+  } else {
+    UT_ASSERT_EQUAL (ChainSize, 0);
+  }
+
+  return UNIT_TEST_PASSED;
+}
+
 TEST_DESC  mRsaCertTest[] = {
   //
   // -----Description--------------------------------------Class----------------------Function-----------------Pre---Post--Context
@@ -781,6 +855,8 @@ TEST_DESC  mPkcs7Test[] = {
   { "TestVerifyPkcs7SignVerifyNonSelfIssued()", "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignVerifyNonSelfIssued, NULL, NULL, NULL },
   { "TestCmsGetSignerInfoNum()",                "CryptoPkg.BaseCryptLib.Pkcs7", TestCmsGetSignerInfoNum,                NULL, NULL, NULL },
   { "TestCmsGetSignerInfoNumInvalidData()",     "CryptoPkg.BaseCryptLib.Pkcs7", TestCmsGetSignerInfoNumInvalidData,     NULL, NULL, NULL },
+  { "TestCmsVerifyInvalidInput()",              "CryptoPkg.BaseCryptLib.Pkcs7", TestCmsVerifyInvalidInput,              NULL, NULL, NULL },
+  { "TestCmsVerifiedChain()",                   "CryptoPkg.BaseCryptLib.Pkcs7", TestCmsVerifiedChain,                   NULL, NULL, NULL },
 };
 
 UINTN  mPkcs7TestNum = ARRAY_SIZE (mPkcs7Test);
