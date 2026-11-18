@@ -17,7 +17,7 @@
 variables:
 - group: architectures-x86-64
 - name: tool_chain_tag
-  value: VS2022
+  value: VS2026
 - name: vm_image
   value: windows-latest
 - group: coverage
