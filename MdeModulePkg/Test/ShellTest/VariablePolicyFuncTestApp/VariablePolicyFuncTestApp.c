@@ -24,7 +24,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // #include <Library/UnitTestBootLib.h>
 
 #define UNIT_TEST_APP_NAME     "Variable Policy Unit Test Application"
-#define UNIT_TEST_APP_VERSION  "0.1"
+#define UNIT_TEST_APP_VERSION  "0.2"
 
 // TODO: Need to add to the UnitTestFrameworkPkg
 UNIT_TEST_FRAMEWORK_HANDLE
@@ -2044,6 +2044,18 @@ LockPolicyEngineTests (
   UINT16      Value;
   UINT64      Value64;
   BOOLEAN     State;
+  UINTN       DataSize;
+
+  // Remove nonvolatile state left by an earlier run before installing the lock policy.
+  Status = gRT->SetVariable (
+                  L"BeforeVpeLockNoLockPolicyVar",
+                  &mTestNamespaceGuid1,
+                  0,
+                  0,
+                  NULL
+                  );
+  UT_LOG_INFO ("Delete BeforeVpeLockNoLockPolicyVar before policy registration status: %r\n", Status);
+  UT_ASSERT_TRUE ((Status == EFI_SUCCESS) || (Status == EFI_NOT_FOUND));
 
   //
   // First let's register a policy that we'll test after VPE lock
@@ -2097,6 +2109,16 @@ LockPolicyEngineTests (
                    &Value64
                    );
   UT_ASSERT_TRUE ((Status == EFI_WRITE_PROTECTED) || (Status == EFI_INVALID_PARAMETER));
+
+  DataSize = sizeof (Value64);
+  Status   = gRT->GetVariable (
+                    L"BeforeVpeLockNoLockPolicyVar",
+                    &mTestNamespaceGuid1,
+                    NULL,
+                    &DataSize,
+                    &Value64
+                    );
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
 
   //
   // Let's create the variable from the policy now
@@ -2213,7 +2235,7 @@ IgnoreContextAndReboot (
 }
 
 /**
-  Disable policy tests.
+  Disable policy tests and remove the variable created by the lock-policy test.
 
   @param        Context
   **/
@@ -2239,6 +2261,16 @@ DisablePolicyEngineTests (
   Status = mVarPol->IsVariablePolicyEnabled (&State);
   UT_ASSERT_NOT_EFI_ERROR (Status);
   UT_ASSERT_EQUAL (State, FALSE);
+
+  Status = gRT->SetVariable (
+                  L"BeforeVpeLockNoLockPolicyVar",
+                  &mTestNamespaceGuid1,
+                  0,
+                  0,
+                  NULL
+                  );
+  UT_LOG_INFO ("Delete BeforeVpeLockNoLockPolicyVar after disabling policy status: %r\n", Status);
+  UT_ASSERT_TRUE ((Status == EFI_SUCCESS) || (Status == EFI_NOT_FOUND));
 
   //
   // Try locking it?
@@ -2632,7 +2664,6 @@ UefiMain (
     goto EXIT;
   }
 
-  AddTestCase (LockPolicyTestSuite, "Test locking policy", "Common.VP.LockPolicyTests.LockPolicyEngineTests", LockPolicyEngineTests, LocateVarPolicyPreReq, NULL, NULL);
   AddTestCase (LockPolicyTestSuite, "Test locking policy", "Common.VP.LockPolicyTests.LockPolicyEngineTests", LockPolicyEngineTests, LocateVarPolicyPreReq, IgnoreContextAndReboot, NULL);
 
   //
