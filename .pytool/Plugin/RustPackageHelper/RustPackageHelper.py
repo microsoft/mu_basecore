@@ -52,19 +52,26 @@ class RustWorkspace:
 
         member_paths = set()
 
-        # Grab all members specifically specified in the workspace
+        # Explicit members are always included.
         for member in workspace["members"]:
             member_paths.add(self.path / member)
 
-        # Build a dep list that only contains dependencies with a path. These are workspace
-        # members.
+        # Exclusions apply only to implicit local path dependencies.
         dep_list = workspace["dependencies"]
         dep_list = [
             dep_list[dep] for dep in dep_list if not isinstance(dep_list[dep], str) and dep_list[dep].get("path")
         ]
 
+        # Cargo keeps '..' in exclusion entries literal. Normalize only dependency paths for comparison below.
+        # Retain their original paths when adding them as members.
+        workspace_path = Path(os.path.abspath(self.path))
+        excluded_paths = {workspace_path / exclude for exclude in workspace.get("exclude", [])}
         for dep in dep_list:
-            member_paths.add(self.path / dep["path"])
+            dep_path = self.path / dep["path"]
+            normalized_path = Path(os.path.abspath(dep_path))
+            # Match the directory itself and descendants.
+            if not any(normalized_path.is_relative_to(excluded) for excluded in excluded_paths):
+                member_paths.add(dep_path)
 
         self.members = [RustPackage(path) for path in member_paths]
 
@@ -140,7 +147,7 @@ class RustWorkspace:
                     line_coverage = file["summary"]["lines"]
                     if line_coverage["count"] > 0:
                         result["coverage"][relative_path.as_posix()] = (
-                            f'{line_coverage["covered"]}/{line_coverage["count"]}'
+                            f"{line_coverage['covered']}/{line_coverage['count']}"
                         )
         except (OSError, ValueError, KeyError, TypeError) as error:
             raise RuntimeError(f"Failed to read LLVM coverage report {report_path}: {error}") from error

@@ -96,6 +96,48 @@ class TestRustWorkspace(unittest.TestCase):
 
             self.assertEqual(workspace.members, [])
 
+    def test_set_members_retains_explicit_members_under_exclusions(self) -> None:
+        """Explicit members take precedence over exact and parent exclusions."""
+        for excluded_path in ("Pkg/crate", "Pkg"):
+            with self.subTest(excluded_path=excluded_path), tempfile.TemporaryDirectory() as temp_dir:
+                workspace_path = pathlib.Path(temp_dir)
+                workspace = self._create_workspace(
+                    workspace_path,
+                    '[workspace]\nmembers = ["Pkg/crate"]\n'
+                    f'exclude = ["{excluded_path}"]\n'
+                    "[workspace.dependencies]\n"
+                    'crate = { path = "Pkg/crate" }\n',
+                )
+
+                self.assertEqual([member.path for member in workspace.members], [workspace_path / "Pkg/crate"])
+
+    def test_set_members_matches_cargo_exclusion_paths(self) -> None:
+        """Match normalized dependencies against literal directory exclusions."""
+        for excluded_path, dependency_path, is_excluded in (
+            ("Pkg/excluded_crate", "./Pkg/excluded_crate/", True),
+            ("Pkg", "Pkg/excluded_crate", True),
+            ("Pkg/excluded_crate", "Pkg/child/../excluded_crate", True),
+            ("Pkg/child/../excluded_crate", "Pkg/excluded_crate", False),
+            ("Pkg", "Pkg/../OtherPkg/kept_crate", False),
+        ):
+            with self.subTest(excluded_path=excluded_path, dependency_path=dependency_path), \
+                    tempfile.TemporaryDirectory() as temp_dir:
+                workspace_path = pathlib.Path(temp_dir)
+                workspace = self._create_workspace(
+                    workspace_path,
+                    '[workspace]\nmembers = ["explicit_crate"]\n'
+                    f'exclude = ["{excluded_path}"]\n'
+                    "[workspace.dependencies]\n"
+                    f'excluded_crate = {{ path = "{dependency_path}" }}\n'
+                    'retained_crate = { path = "Pkg_extra/retained_crate" }\n',
+                )
+
+                expected_members = [workspace_path / "explicit_crate", workspace_path / "Pkg_extra/retained_crate"]
+                if not is_excluded:
+                    expected_members.append(workspace_path / dependency_path)
+
+                self.assertCountEqual([member.path for member in workspace.members], expected_members)
+
     def test_coverage_ci_returns_filtered_line_counts(self) -> None:
         """Use coverage-ci and return LLVM line counts for non-ignored files."""
         with tempfile.TemporaryDirectory() as temp_dir:
