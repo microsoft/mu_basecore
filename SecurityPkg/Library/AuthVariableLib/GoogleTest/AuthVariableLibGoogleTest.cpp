@@ -1002,6 +1002,112 @@ INSTANTIATE_TEST_SUITE_P (
                )
   );
 
+// MU_CHANGE [BEGIN] - PK deletion regression coverage.
+
+/**
+  Build a mock time-based authentication descriptor with no variable payload.
+
+  @return Buffer containing the authentication descriptor for deletion.
+**/
+STATIC std::vector<UINT8>
+BuildAuthenticatedVariableDeleteData (
+  VOID
+  )
+{
+  CONST UINTN                    SigDataSize = 22;
+  std::vector<UINT8>             Data (OFFSET_OF_AUTHINFO2_CERT_DATA + SigDataSize, 0);
+  EFI_VARIABLE_AUTHENTICATION_2  *Authentication;
+
+  Authentication                                = reinterpret_cast<EFI_VARIABLE_AUTHENTICATION_2 *>(Data.data ());
+  Authentication->AuthInfo.Hdr.dwLength         = OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData) + SigDataSize;
+  Authentication->AuthInfo.Hdr.wCertificateType = WIN_CERT_TYPE_EFI_GUID;
+  Authentication->AuthInfo.CertType             = gEfiCertPkcs7Guid;
+
+  return Data;
+}
+
+/**
+  Accept a variable update without modifying backing storage.
+
+  @param[in] AuthVariableInfo  Variable update supplied by AuthVariableLib.
+  @retval EFI_SUCCESS  The test update was accepted.
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+UpdateVariableSuccess (
+  IN AUTH_VARIABLE_INFO  *AuthVariableInfo
+  )
+{
+  (VOID)AuthVariableInfo;
+  return EFI_SUCCESS;
+}
+
+STATIC UINT8   mSetupModeValue   = USER_MODE;
+STATIC UINT8   mSecureBootValue  = SECURE_BOOT_MODE_ENABLE;
+STATIC CHAR16  mSetupModeName[]  = { 'S', 'e', 't', 'u', 'p', 'M', 'o', 'd', 'e', 0 };
+STATIC CHAR16  mSecureBootName[] = { 'S', 'e', 'c', 'u', 'r', 'e', 'B', 'o', 'o', 't', 0 };
+
+/**
+  Return the platform-state variables used by the PK deletion test.
+
+  @param[in]  VariableName     Name of the requested variable.
+  @param[in]  VendorGuid       Variable namespace.
+  @param[out] AuthVariableInfo Receives the requested variable data.
+  @retval EFI_SUCCESS    SetupMode or SecureBoot was found.
+  @retval EFI_NOT_FOUND  The requested variable is not provided by this stub.
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+FindPlatformStateVariable (
+  IN  CHAR16              *VariableName,
+  IN  EFI_GUID            *VendorGuid,
+  OUT AUTH_VARIABLE_INFO  *AuthVariableInfo
+  )
+{
+  if (CompareGuid (VendorGuid, &gEfiGlobalVariableGuid) && (StrCmp (VariableName, mSetupModeName) == 0)) {
+    AuthVariableInfo->Data     = &mSetupModeValue;
+    AuthVariableInfo->DataSize = sizeof (mSetupModeValue);
+    return EFI_SUCCESS;
+  }
+
+  if (CompareGuid (VendorGuid, &gEfiGlobalVariableGuid) && (StrCmp (VariableName, mSecureBootName) == 0)) {
+    AuthVariableInfo->Data     = &mSecureBootValue;
+    AuthVariableInfo->DataSize = sizeof (mSecureBootValue);
+    return EFI_SUCCESS;
+  }
+
+  return EFI_NOT_FOUND;
+}
+
+/**
+  Verify that disabling variable policy permits PK deletion in user mode.
+**/
+TEST_F (VerifyTimeBasedPayloadSignerInfoTest, AllowsPkDeletionWhenVariablePolicyDisabled) {
+  std::vector<UINT8>  Data             = BuildAuthenticatedVariableDeleteData ();
+  CHAR16              PkVariableName[] = { 'P', 'K', 0 };
+
+  AuthVarContext.FindVariable   = FindPlatformStateVariable;
+  AuthVarContext.UpdateVariable = UpdateVariableSuccess;
+  AuthVarContext.AtRuntime      = AtRuntimeFalse;
+  mPlatformMode                 = USER_MODE;
+
+  EXPECT_EQ (
+    ProcessVarWithPk (
+      PkVariableName,
+      &gEfiGlobalVariableGuid,
+      Data.data (),
+      Data.size (),
+      EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS,
+      TRUE
+      ),
+    EFI_SUCCESS
+    );
+}
+
+// MU_CHANGE [END] - PK deletion regression coverage.
+
 /**
   Run the AuthVariableLib host tests.
 
