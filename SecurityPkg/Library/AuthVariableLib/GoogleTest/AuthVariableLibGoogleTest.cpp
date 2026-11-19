@@ -419,7 +419,7 @@ TEST_F (KekSelfSignedAppendTest, AcceptsSelfSignedAppendWhenPkVerificationFails)
   // Fallback KEK verification succeeds against the existing KEK database.
   EXPECT_CALL (BaseCryptLibMock, Pkcs7Verify (_, _, _, _, _, _))
     .WillOnce (Return (TRUE));
-  EXPECT_CALL (BaseCryptLibMock, RsaGetPublicKeyFromX509 (_, _, _))
+  EXPECT_CALL (BaseCryptLibMock, X509IsPublicKeySupported (_, _))
     .WillOnce (Return (TRUE));
 
   EXPECT_EQ (
@@ -485,6 +485,26 @@ TEST_F (KekSelfSignedAppendTest, RejectsReplaceWithoutPkWhenNotAppending) {
       Attributes
       ),
     EFI_SECURITY_VIOLATION
+    );
+  EXPECT_EQ (mUpdateVariableCallCount, (UINTN)0);
+}
+
+TEST_F (KekSelfSignedAppendTest, RejectsUnsupportedX509PublicKey) {
+  std::vector<UINT8>  Data = BuildAuthenticatedX509SignatureListData ();
+
+  mPlatformMode = SETUP_MODE;
+  EXPECT_CALL (BaseCryptLibMock, X509IsPublicKeySupported (_, _))
+    .WillOnce (Return (FALSE));
+  EXPECT_EQ (
+    ProcessVarWithPk (
+      mKekVariableName,
+      &VendorGuid,
+      Data.data (),
+      Data.size (),
+      EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS,
+      FALSE
+      ),
+    EFI_INVALID_PARAMETER
     );
   EXPECT_EQ (mUpdateVariableCallCount, (UINTN)0);
 }
