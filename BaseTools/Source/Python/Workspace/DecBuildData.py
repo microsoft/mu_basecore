@@ -285,7 +285,12 @@ class DecBuildData(PackageBuildClassObject):
                 LineNo = Record[-1]
                 # validate the path
                 ErrorCode, ErrorInfo = File.Validate()
-                if ErrorCode != 0:
+                # MU_CHANGE BEGIN: Allow missing include directories without failing the build
+                if ErrorCode == FILE_NOT_FOUND:
+                    EdkLogger.warn('build', 'DEC include directory does not exist; ignoring include path', ExtraData=ErrorInfo, File=self.MetaFile, Line=LineNo)
+                    continue
+                elif ErrorCode != 0:
+                    # MU_CHANGE END: Allow missing include directories without failing the build
                     EdkLogger.error('build', ErrorCode, ExtraData=ErrorInfo, File=self.MetaFile, Line=LineNo)
 
                 # avoid duplicate include path
