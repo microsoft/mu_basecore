@@ -108,8 +108,13 @@ TestUnavailableProtocols (
   gCryptoProtocol = NULL;
   Capabilities    = (BASE_CRYPT_OP_CAPABILITY *)(UINTN)1;
   CapabilityCount = MAX_UINTN;
-  Status          = GetCryptoOpCapability (&gCryptoOpCmsVerifyGuid, &Capabilities, &CapabilityCount);
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_UNSUPPORTED);
+  if (DebugAssertEnabled ()) {
+    UT_EXPECT_ASSERT_FAILURE (GetCryptoOpCapability (&gCryptoOpCmsVerifyGuid, &Capabilities, &CapabilityCount), NULL);
+  } else {
+    Status = GetCryptoOpCapability (&gCryptoOpCmsVerifyGuid, &Capabilities, &CapabilityCount);
+    UT_ASSERT_STATUS_EQUAL (Status, EFI_UNSUPPORTED);
+  }
+
   UT_ASSERT_TRUE (Capabilities == NULL);
   UT_ASSERT_EQUAL (CapabilityCount, 0);
 
@@ -121,10 +126,15 @@ TestUnavailableProtocols (
     gCryptoProtocol->Minor = Versions[Index][1];
     Capabilities           = (BASE_CRYPT_OP_CAPABILITY *)(UINTN)1;
     CapabilityCount        = MAX_UINTN;
-    Status                 = GetCryptoOpCapability (&gCryptoOpCmsVerifyGuid, &Capabilities, &CapabilityCount);
+    if (DebugAssertEnabled ()) {
+      UT_EXPECT_ASSERT_FAILURE (GetCryptoOpCapability (&gCryptoOpCmsVerifyGuid, &Capabilities, &CapabilityCount), NULL);
+    } else {
+      Status = GetCryptoOpCapability (&gCryptoOpCmsVerifyGuid, &Capabilities, &CapabilityCount);
+      UT_ASSERT_STATUS_EQUAL (Status, EFI_UNSUPPORTED);
+    }
+
     FreePool (gCryptoProtocol);
     gCryptoProtocol = NULL;
-    UT_ASSERT_STATUS_EQUAL (Status, EFI_UNSUPPORTED);
     UT_ASSERT_TRUE (Capabilities == NULL);
     UT_ASSERT_EQUAL (CapabilityCount, 0);
   }
@@ -135,9 +145,14 @@ TestUnavailableProtocols (
   gCryptoProtocol = &Protocol;
   Capabilities    = (BASE_CRYPT_OP_CAPABILITY *)(UINTN)1;
   CapabilityCount = MAX_UINTN;
-  Status          = GetCryptoOpCapability (&gCryptoOpCmsVerifyGuid, &Capabilities, &CapabilityCount);
+  if (DebugAssertEnabled ()) {
+    UT_EXPECT_ASSERT_FAILURE (GetCryptoOpCapability (&gCryptoOpCmsVerifyGuid, &Capabilities, &CapabilityCount), NULL);
+  } else {
+    Status = GetCryptoOpCapability (&gCryptoOpCmsVerifyGuid, &Capabilities, &CapabilityCount);
+    UT_ASSERT_STATUS_EQUAL (Status, EFI_UNSUPPORTED);
+  }
+
   gCryptoProtocol = NULL;
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_UNSUPPORTED);
   UT_ASSERT_TRUE (Capabilities == NULL);
   UT_ASSERT_EQUAL (CapabilityCount, 0);
   return UNIT_TEST_PASSED;
