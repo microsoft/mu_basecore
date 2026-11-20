@@ -1108,6 +1108,282 @@ TEST_F (VerifyTimeBasedPayloadSignerInfoTest, AllowsPkDeletionWhenVariablePolicy
 
 // MU_CHANGE [END] - PK deletion regression coverage.
 
+// MU_CHANGE [BEGIN] - Legacy private-variable deletion regression coverage.
+STATIC CONST UINT32  mPrivateAttributes = EFI_VARIABLE_NON_VOLATILE |
+                                          EFI_VARIABLE_BOOTSERVICE_ACCESS |
+                                          EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS;
+STATIC UINT8               mPrivateSignerStack[] = { 1, 0xAA, 0xBB };
+STATIC UINT8               mPrivateIssuer[]      = { 0xCC };
+STATIC CHAR16              mPrivateCertDbName[]  = { 'c', 'e', 'r', 't', 'd', 'b', 0 };
+STATIC EFI_TIME            mPrivateTimeStamp;
+STATIC std::vector<UINT8>  mPrivateCertDb;
+STATIC UINTN               mPrivateDeleteCount;
+STATIC UINTN               mPrivateCertDbWriteCount;
+
+/**
+  Return the legacy private variable or its registered signer database.
+
+  @param[in]  VariableName  Name of the requested variable.
+  @param[in]  VendorGuid    Variable namespace.
+  @param[out] Info          Receives the requested variable metadata and data.
+  @retval EFI_SUCCESS    The private variable or certdb was found.
+  @retval EFI_NOT_FOUND  The requested variable is not provided by this stub.
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+FindPrivateVariableAndCertDb (
+  IN  CHAR16              *VariableName,
+  IN  EFI_GUID            *VendorGuid,
+  OUT AUTH_VARIABLE_INFO  *Info
+  )
+{
+  STATIC UINT8  Value;
+  EFI_GUID      PrivateGuid = { 0 };
+
+  if (CompareGuid (VendorGuid, &PrivateGuid) && (StrCmp (VariableName, mVariableName) == 0)) {
+    Info->Data       = &Value;
+    Info->DataSize   = sizeof (Value);
+    Info->Attributes = mPrivateAttributes;
+    Info->TimeStamp  = &mPrivateTimeStamp;
+    return EFI_SUCCESS;
+  }
+
+  if (CompareGuid (VendorGuid, &gEfiCertDbGuid) && (StrCmp (VariableName, mPrivateCertDbName) == 0)) {
+    Info->Data     = mPrivateCertDb.data ();
+    Info->DataSize = mPrivateCertDb.size ();
+    return EFI_SUCCESS;
+  }
+
+  return EFI_NOT_FOUND;
+}
+
+/**
+  Record private-variable deletion and validate certificate-database cleanup.
+
+  @param[in] Info  Variable update supplied by AuthVariableLib.
+  @retval EFI_SUCCESS  The update was recorded by the test callback.
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+RecordPrivateVariableDeletion (
+  IN AUTH_VARIABLE_INFO  *Info
+  )
+{
+  if (CompareGuid (Info->VendorGuid, &gEfiCertDbGuid)) {
+    EXPECT_EQ (Info->DataSize, sizeof (UINT32));
+    EXPECT_EQ (ReadUnaligned32 (static_cast<UINT32 *>(Info->Data)), sizeof (UINT32));
+    mPrivateCertDbWriteCount++;
+  } else {
+    EXPECT_EQ (StrCmp (Info->VariableName, mVariableName), 0);
+    EXPECT_EQ (Info->DataSize, 0U);
+    mPrivateDeleteCount++;
+  }
+
+  return EFI_SUCCESS;
+}
+
+class PrivateAuthenticatedVariableDeletionTest : public VerifyTimeBasedPayloadSignerInfoTest {
+protected:
+  UINT8 *OriginalCertDbStore;
+  UINT8 CertDbStore[128];
+
+  /**
+    Install private-variable, signer-database, and enabled-policy test state.
+  **/
+  VOID
+  SetUp (
+    ) override
+  {
+    VerifyTimeBasedPayloadSignerInfoTest::SetUp ();
+    AuthVarContext.FindVariable     = FindPrivateVariableAndCertDb;
+    AuthVarContext.GetScratchBuffer = GetScratchBufferSuccess;
+    AuthVarContext.UpdateVariable   = RecordPrivateVariableDeletion;
+    AuthVarContext.AtRuntime        = AtRuntimeFalse;
+    OriginalCertDbStore             = mCertDbStore;
+    mCertDbStore                    = CertDbStore;
+    mPrivateDeleteCount             = 0;
+    mPrivateCertDbWriteCount        = 0;
+    ZeroMem (&mPrivateTimeStamp, sizeof (mPrivateTimeStamp));
+    mPrivateTimeStamp.Year = 2025;
+
+    UINT32  NameSize = (UINT32)StrLen (mVariableName);
+    UINT32  NodeSize = sizeof (AUTH_CERT_DB_DATA) + NameSize * sizeof (CHAR16) + sizeof (mPrivateSignerStack);
+
+    mPrivateCertDb.assign (sizeof (UINT32) + NodeSize, 0);
+    WriteUnaligned32 (reinterpret_cast<UINT32 *>(mPrivateCertDb.data ()), (UINT32)mPrivateCertDb.size ());
+    AUTH_CERT_DB_DATA  *Node = reinterpret_cast<AUTH_CERT_DB_DATA *>(mPrivateCertDb.data () + sizeof (UINT32));
+
+    Node->VendorGuid   = VendorGuid;
+    Node->CertNodeSize = NodeSize;
+    Node->NameSize     = NameSize;
+    Node->CertDataSize = sizeof (mPrivateSignerStack);
+    CopyMem (Node + 1, mVariableName, NameSize * sizeof (CHAR16));
+    CopyMem (reinterpret_cast<UINT8 *>(Node + 1) + NameSize * sizeof (CHAR16), mPrivateSignerStack, sizeof (mPrivateSignerStack));
+    ASSERT_EQ (InitVariablePolicyLib (PolicyGetVariableNotFound), EFI_SUCCESS);
+    ASSERT_TRUE (IsVariablePolicyEnabled ());
+  }
+
+  /**
+    Restore the signer-database buffer, variable policy, and parent fixture.
+  **/
+  VOID
+  TearDown (
+    ) override
+  {
+    mCertDbStore = OriginalCertDbStore;
+    EXPECT_EQ (DeinitVariablePolicyLib (), EFI_SUCCESS);
+    VerifyTimeBasedPayloadSignerInfoTest::TearDown ();
+  }
+
+  /**
+    Build an empty-payload update newer than the fixture's stored timestamp.
+
+    @return Authentication descriptor for deleting the private variable.
+  **/
+  std::vector<UINT8>
+  DeleteData (
+    )
+  {
+    std::vector<UINT8>  Data = BuildAuthenticatedVariableData ();
+
+    Data.pop_back ();
+    reinterpret_cast<EFI_VARIABLE_AUTHENTICATION_2 *>(Data.data ())->TimeStamp.Year = 2026;
+    return Data;
+  }
+
+  /**
+    Configure signature extraction and verification expectations for deletion.
+
+    @param[in] Valid           Result to return from signature verification.
+    @param[in] MatchingSigner  Whether owner matching permits verification.
+  **/
+  VOID
+  ExpectSignature (
+    BOOLEAN  Valid,
+    BOOLEAN  MatchingSigner = TRUE
+    )
+  {
+    EXPECT_CALL (BaseCryptLibMock, CmsGetSignerInfoNum (_, _)).WillOnce (Return (1));
+    EXPECT_CALL (BaseCryptLibMock, Pkcs7GetSigners (_, _, _, _, _, _))
+      .WillOnce (
+
+         /**
+           Return borrowed mock signer-stack and issuer-certificate buffers.
+
+           @param[out] Stack       Receives the mock signer stack.
+           @param[out] StackSize   Receives the signer-stack size in bytes.
+           @param[out] Issuer      Receives the mock issuer certificate.
+           @param[out] IssuerSize  Receives the issuer size in bytes.
+           @retval TRUE  Mock signer extraction succeeded.
+         **/
+         [](CONST UINT8 *, UINTN, UINT8 **Stack, UINTN *StackSize, UINT8 **Issuer, UINTN *IssuerSize) {
+      *Stack      = mPrivateSignerStack;
+      *StackSize  = sizeof (mPrivateSignerStack);
+      *Issuer     = mPrivateIssuer;
+      *IssuerSize = sizeof (mPrivateIssuer);
+      return TRUE;
+    }
+         );
+    if (MatchingSigner) {
+      EXPECT_CALL (BaseCryptLibMock, Pkcs7Verify (_, _, _, _, _, _)).WillOnce (Return (Valid));
+    } else {
+      EXPECT_CALL (BaseCryptLibMock, Pkcs7Verify (_, _, _, _, _, _)).Times (0);
+    }
+
+    EXPECT_CALL (BaseCryptLibMock, Pkcs7FreeSigners (_)).Times (2);
+  }
+
+  /**
+    Process a deletion request for the fixture's legacy private variable.
+
+    @param[in] Data  Authentication descriptor with an empty payload.
+    @return Status returned by AuthVariableLibProcessVariable.
+  **/
+  EFI_STATUS
+  Delete (
+    std::vector<UINT8>  &Data
+    )
+  {
+    return AuthVariableLibProcessVariable (mVariableName, &VendorGuid, Data.data (), Data.size (), mPrivateAttributes);
+  }
+};
+
+/**
+  Verify that signed deletion removes the variable and its signer record.
+**/
+TEST_F (PrivateAuthenticatedVariableDeletionTest, SignedDeletionAlsoRemovesCertificateRecord) {
+  std::vector<UINT8>  Data = DeleteData ();
+
+  ExpectSignature (TRUE);
+  EXPECT_EQ (Delete (Data), EFI_SUCCESS);
+  EXPECT_EQ (mPrivateDeleteCount, 1U);
+  EXPECT_EQ (mPrivateCertDbWriteCount, 1U);
+}
+
+/**
+  Verify that an invalid signature preserves the variable and signer record.
+**/
+TEST_F (PrivateAuthenticatedVariableDeletionTest, InvalidSignatureCannotDelete) {
+  std::vector<UINT8>  Data = DeleteData ();
+
+  ExpectSignature (FALSE);
+  EXPECT_EQ (Delete (Data), EFI_SECURITY_VIOLATION);
+  EXPECT_EQ (mPrivateDeleteCount, 0U);
+  EXPECT_EQ (mPrivateCertDbWriteCount, 0U);
+}
+
+/**
+  Verify that a signer other than the registered owner cannot delete.
+**/
+TEST_F (PrivateAuthenticatedVariableDeletionTest, DifferentOwnerCannotDelete) {
+  std::vector<UINT8>  Data = DeleteData ();
+
+  mPrivateCertDb.back () ^= 1;
+  ExpectSignature (FALSE, FALSE);
+  EXPECT_EQ (Delete (Data), EFI_SECURITY_VIOLATION);
+  EXPECT_EQ (mPrivateDeleteCount, 0U);
+  EXPECT_EQ (mPrivateCertDbWriteCount, 0U);
+}
+
+/**
+  Verify that a replayed timestamp is rejected before signature processing.
+**/
+TEST_F (PrivateAuthenticatedVariableDeletionTest, ReplayedDeletionCannotDelete) {
+  std::vector<UINT8>  Data = DeleteData ();
+
+  reinterpret_cast<EFI_VARIABLE_AUTHENTICATION_2 *>(Data.data ())->TimeStamp = mPrivateTimeStamp;
+  EXPECT_CALL (BaseCryptLibMock, CmsGetSignerInfoNum (_, _)).Times (0);
+  EXPECT_EQ (Delete (Data), EFI_SECURITY_VIOLATION);
+  EXPECT_EQ (mPrivateDeleteCount, 0U);
+  EXPECT_EQ (mPrivateCertDbWriteCount, 0U);
+}
+
+/**
+  Verify that policy-disabled recovery deletes without signature verification.
+**/
+TEST_F (PrivateAuthenticatedVariableDeletionTest, DisabledPolicyAllowsRecoveryWithoutSignature) {
+  std::vector<UINT8>  Data = DeleteData ();
+
+  ASSERT_EQ (DisableVariablePolicy (), EFI_SUCCESS);
+  EXPECT_CALL (BaseCryptLibMock, CmsGetSignerInfoNum (_, _)).Times (0);
+  EXPECT_CALL (BaseCryptLibMock, Pkcs7Verify (_, _, _, _, _, _)).Times (0);
+  EXPECT_EQ (Delete (Data), EFI_SUCCESS);
+  EXPECT_EQ (mPrivateDeleteCount, 1U);
+  EXPECT_EQ (mPrivateCertDbWriteCount, 1U);
+}
+
+/**
+  Verify that ordinary unsigned deletion cannot bypass existing authentication.
+**/
+TEST_F (PrivateAuthenticatedVariableDeletionTest, OrdinaryUnsignedDeletionRemainsWriteProtected) {
+  EXPECT_EQ (AuthVariableLibProcessVariable (mVariableName, &VendorGuid, NULL, 0, 0), EFI_WRITE_PROTECTED);
+  EXPECT_EQ (mPrivateDeleteCount, 0U);
+  EXPECT_EQ (mPrivateCertDbWriteCount, 0U);
+}
+// MU_CHANGE [END] - Legacy private-variable deletion regression coverage.
+
 /**
   Run the AuthVariableLib host tests.
 
