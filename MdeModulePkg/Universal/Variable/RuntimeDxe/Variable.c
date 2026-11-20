@@ -2758,6 +2758,12 @@ IsSecureBootPolicyVariables (
   buffer overflow, integer overflow.
   This function will check attribute carefully to avoid authentication bypass.
 
+  MU_CHANGE [BEGIN] - Document private authenticated-variable deprecation.
+  Private time-based authenticated variables are admitted only for deletion
+  of an existing variable. Creation, payload updates, and appends are rejected.
+  Authentication and variable-policy checks still govern deletion and recovery.
+  MU_CHANGE [END] - Document private authenticated-variable deprecation.
+
   @param VariableName                     Name of Variable to be found.
   @param VendorGuid                       Variable vendor GUID.
   @param Attributes                       Attribute value of the variable found
@@ -2774,6 +2780,10 @@ IsSecureBootPolicyVariables (
   @retval EFI_INVALID_PARAMETER           The DataSize is not too small and Data is NULL.
   @retval EFI_DEVICE_ERROR                The variable could not be retrieved due to a hardware error.
   @retval EFI_SECURITY_VIOLATION          The variable could not be retrieved due to an authentication failure.
+  MU_CHANGE [BEGIN] - Document private authenticated-variable rejection.
+  @retval EFI_UNSUPPORTED                 A private time-based authenticated variable creation, payload update,
+                                          or append was requested.
+  MU_CHANGE [END] - Document private authenticated-variable rejection.
   @retval EFI_UNSUPPORTED                 After ExitBootServices() has been called, this return code may be returned
                                           if no variable storage is supported. The platform should describe this
                                           runtime service as unsupported at runtime via an EFI_RT_PROPERTIES_TABLE
@@ -2821,16 +2831,6 @@ VariableServiceSetVariable (
   }
 
   //
-  // The use of the EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS attribute for variables other than Secure Boot Policy Variables
-  // is deprecated and should no longer be used.
-  //
-  if (!IsSecureBootPolicyVariables (VariableName, VendorGuid)) {
-    if ((Attributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) != 0) {
-      return EFI_UNSUPPORTED;
-    }
-  }
-
-  //
   // Check if the combination of attribute bits is valid.
   //
   if ((Attributes & (EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS)) == EFI_VARIABLE_RUNTIME_ACCESS) {
@@ -2873,7 +2873,8 @@ VariableServiceSetVariable (
   // and VariablePolicy is disabled, allow deletion without complete payload.
   //
   if ((Attributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) == EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) {
-    if ((Data == NULL) && (DataSize == 0) && !IsVariablePolicyEnabled ()) {
+    // MM transport supplies a non-NULL pointer even for a zero-length payload.
+    if ((DataSize == 0) && !IsVariablePolicyEnabled ()) {
       // NOTE: Data really should be CONST. Don't know why it isn't.
       Data     = (VOID *)&mTimeBasedDeletePayload;
       DataSize = OFFSET_OF (EFI_VARIABLE_AUTHENTICATION_2, AuthInfo) + OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData);
@@ -3078,6 +3079,21 @@ VariableServiceSetVariable (
       goto Done;
     }
   }
+
+  // MU_CHANGE [BEGIN] - Allow only legacy private authenticated-variable deletion.
+  //
+  // Deprecated private authentication is retained only to delete an existing
+  // variable. Authentication and privileged recovery remain in AuthVariableLib.
+  //
+  if (!IsSecureBootPolicyVariables (VariableName, VendorGuid) &&
+      ((Attributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) != 0) &&
+      (EFI_ERROR (Status) || (PayloadSize != 0) || ((Attributes & EFI_VARIABLE_APPEND_WRITE) != 0)))
+  {
+    Status = EFI_UNSUPPORTED;
+    goto Done;
+  }
+
+  // MU_CHANGE [END] - Allow only legacy private authenticated-variable deletion.
 
   if (!FeaturePcdGet (PcdUefiVariableDefaultLangDeprecate)) {
     //

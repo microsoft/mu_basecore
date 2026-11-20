@@ -43,6 +43,19 @@
       gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable|TRUE
   }
 
+  # MU_CHANGE [BEGIN] - Private authenticated-variable deletion host tests.
+  MdeModulePkg/Universal/Variable/RuntimeDxe/RuntimeDxeUnitTest/VariableAuthDeleteGoogleTest.inf {
+    <LibraryClasses>
+      SynchronizationLib|MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
+      TimerLib|MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
+      VarCheckLib|MdeModulePkg/Library/VarCheckLib/VarCheckLib.inf
+      VariablePolicyLib|MdeModulePkg/Library/VariablePolicyLib/VariablePolicyLib.inf
+      VariablePolicyHelperLib|MdeModulePkg/Library/VariablePolicyHelperLib/VariablePolicyHelperLib.inf
+    <PcdsFixedAtBuild>
+      gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable|TRUE
+  }
+  # MU_CHANGE [END] - Private authenticated-variable deletion host tests.
+
   MdeModulePkg/Library/UefiSortLib/UnitTest/UefiSortLibUnitTest.inf {
     <LibraryClasses>
       UefiSortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
