@@ -135,6 +135,8 @@
     <LibraryClasses>
       AuthVariableLib|SecurityPkg/Library/AuthVariableLib/AuthVariableLib.inf
       BaseCryptLib|CryptoPkg/Test/Mock/Library/GoogleTest/MockBaseCryptLib/MockBaseCryptLib.inf
+      CryptoIndicatorRegistrationLib|SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibNull.inf
+      EcitEncodingLib|SecurityPkg/Library/EcitEncodingLib/EcitEncodingLib.inf
       PlatformSecureLib|SecurityPkg/Library/PlatformSecureLibNull/PlatformSecureLibNull.inf
       VariablePolicyLib|MdeModulePkg/Library/VariablePolicyLib/VariablePolicyLib.inf
         SecurityLockAuditLib|MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf
