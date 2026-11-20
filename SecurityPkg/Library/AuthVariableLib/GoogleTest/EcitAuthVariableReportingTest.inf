@@ -46,6 +46,7 @@
   gEfiVendorKeysNvGuid
   gEfiCertDbGuid
   gEfiCertX509Guid
+  gEfiCertV2X509Guid
   gEfiCertPkcs7Guid
 
 [FeaturePcd]
