@@ -1,0 +1,44 @@
+## @file
+# Google Test suite for USB port reset descriptor refresh and DFU transitions.
+#
+# Copyright (c) 2026, Intel Corporation. All rights reserved.
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010017
+  BASE_NAME      = UsbBusDxeGoogleTest
+  FILE_GUID      = 3B8E90B2-8468-4552-A720-0F0D4A6BBE13
+  MODULE_TYPE    = HOST_APPLICATION
+  VERSION_STRING = 1.0
+
+[Sources]
+  UsbBusDxeGoogleTest.cpp
+  ../UsbBus.c
+  ../UsbEnumer.c
+  ../UsbDesc.c
+  ../UsbUtility.c
+  ../UsbHub.c
+  ../ComponentName.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  GoogleTestLib
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  DevicePathLib
+  UefiBootServicesTableLib
+  UefiLib
+  ReportStatusCodeLib
+
+[Protocols]
+  gEfiUsbIoProtocolGuid
+  gEfiDevicePathProtocolGuid
+  gEfiUsb2HcProtocolGuid
