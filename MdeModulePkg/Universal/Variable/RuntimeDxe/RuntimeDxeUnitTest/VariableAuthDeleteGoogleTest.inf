@@ -1,0 +1,57 @@
+## @file
+# Tests for deletion-only admission of deprecated private authenticated variables.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION     = 0x00010005
+  BASE_NAME       = VariableAuthDeleteGoogleTest
+  FILE_GUID       = 687F177A-C9E6-4D57-8564-341FD65E17AE
+  MODULE_TYPE     = HOST_APPLICATION
+  VERSION_STRING  = 1.0
+
+[Sources]
+  VariableAuthDeleteGoogleTest.cpp
+  ../Variable.c
+  ../VariableParsing.c
+  ../VariableRuntimeCache.c
+  ../VariableExLib.c
+  ../SpeculationBarrierDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  GoogleTestLib
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  DebugLib
+  PcdLib
+  SynchronizationLib
+  VarCheckLib
+  VariablePolicyLib
+  VariablePolicyHelperLib
+
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvStoreReserved
+  gEfiMdeModulePkgTokenSpaceGuid.PcdHwErrStorageSize
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxHardwareErrorVariableSize
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVolatileVariableSize
+  gEfiMdeModulePkgTokenSpaceGuid.PcdRuntimeNvReclaimOnce
+  gEfiMdeModulePkgTokenSpaceGuid.PcdVariableStoreSize
+
+[FeaturePcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdVariableCollectStatistics
+  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLangDeprecate
+
+[Guids]
+  gEfiAuthenticatedVariableGuid
+  gEfiVariableGuid
+  gEfiGlobalVariableGuid
+  gEfiImageSecurityDatabaseGuid
+  gEdkiiVarErrorFlagGuid

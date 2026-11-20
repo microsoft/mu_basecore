@@ -9,6 +9,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #pragma once
 
+// MU_CHANGE [BEGIN] - Support independent variable parsing host compilation.
+#include <Uefi.h>
+// MU_CHANGE [END] - Support independent variable parsing host compilation.
 #include <Guid/ImageAuthentication.h>
 #include "Variable.h"
 
