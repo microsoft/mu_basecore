@@ -69,6 +69,10 @@ extern TEST_DESC  mPkcs5Test[];
 
 extern UINTN      mAuthenticodeTestNum;
 extern TEST_DESC  mAuthenticodeTest[];
+#ifdef ENABLE_PERF_BENCHMARKS
+extern UINTN      mPerfBenchmarkTestNum;
+extern TEST_DESC  mPerfBenchmarkTest[];
+#endif
 
 extern UINTN      mAuthenticodeVerifyExTestNum;
 extern TEST_DESC  mAuthenticodeVerifyExTest[];
