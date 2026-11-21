@@ -1,7 +1,6 @@
 /** @file
   This library is BaseCrypto router. It will redirect hash request to each individual
   hash handler registered, such as SHA1, SHA256.
-  Platform can use PcdTpm2HashMask to mask some hash engines.
 
 Copyright (c) 2013 - 2024, Intel Corporation. All rights reserved. <BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -26,10 +25,11 @@ HASH_INTERFACE  mHashInterface[HASH_COUNT] = {
     { 0 }, NULL, NULL, NULL
   }
 };
-UINTN           mHashInterfaceCount = 0;
 
+UINTN   mHashInterfaceCount       = 0; // MU_CHANGE
 UINT32  mSupportedHashMaskLast    = 0;
 UINT32  mSupportedHashMaskCurrent = 0;
+UINT32  mActivePcrBanks           = 0; // MU_CHANGE
 
 /**
   Check mismatch of supported HashMask between modules
@@ -41,7 +41,10 @@ CheckSupportedHashMaskMismatch (
   VOID
   )
 {
-  if (mSupportedHashMaskCurrent != mSupportedHashMaskLast) {
+  // MU_CHANGE
+  if ((mSupportedHashMaskLast != 0) &&
+      (mSupportedHashMaskCurrent != mSupportedHashMaskLast))
+  {
     DEBUG ((
       DEBUG_WARN,
       "WARNING: There is mismatch of supported HashMask (0x%x - 0x%x) between modules\n",
@@ -69,7 +72,21 @@ HashStart (
   HASH_HANDLE  *HashCtx;
   UINTN        Index;
   UINT32       HashMask;
-  EFI_STATUS   Status;
+  // MU_CHANGE - [BEGIN]
+  EFI_STATUS                       Status;
+  EFI_TCG2_EVENT_ALGORITHM_BITMAP  TpmHashAlgorithmBitmap;
+  UINT32                           TpmActivePcrBanks;
+
+  // Acquire the active banks and TPM supported hashing algorithms.
+  Status = Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashAlgorithmBitmap, &TpmActivePcrBanks);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - Failed to determine TPM capabilities!\n", __func__));
+    ASSERT_EFI_ERROR (Status);
+    return Status;
+  }
+
+  mActivePcrBanks = TpmActivePcrBanks;
+  // MU_CHANGE - [END]
 
   if (mHashInterfaceCount == 0) {
     return EFI_UNSUPPORTED;
@@ -85,7 +102,8 @@ HashStart (
 
   for (Index = 0; Index < mHashInterfaceCount; Index++) {
     HashMask = Tpm2GetHashMaskFromGuid (&mHashInterface[Index].HashGuid);
-    if ((HashMask & PcdGet32 (PcdTpm2HashMask)) != 0) {
+    // MU_CHANGE
+    if ((HashMask & mActivePcrBanks) != 0) {
       Status = mHashInterface[Index].HashInit (&HashCtx[Index]);
       if (EFI_ERROR (Status)) {
         FreePool (HashCtx);
@@ -130,7 +148,8 @@ HashUpdate (
 
   for (Index = 0; Index < mHashInterfaceCount; Index++) {
     HashMask = Tpm2GetHashMaskFromGuid (&mHashInterface[Index].HashGuid);
-    if ((HashMask & PcdGet32 (PcdTpm2HashMask)) != 0) {
+    // MU_CHANGE
+    if ((HashMask & mActivePcrBanks) != 0) {
       mHashInterface[Index].HashUpdate (HashCtx[Index], DataToHash, DataToHashLen);
     }
   }
@@ -202,16 +221,16 @@ HashCompleteAndExtend (
   OUT TPML_DIGEST_VALUES  *DigestList
   )
 {
-  TPML_DIGEST_VALUES               Digest;
-  HASH_HANDLE                      *HashCtx;
-  UINTN                            Index;
-  EFI_STATUS                       Status;
-  UINT32                           HashMask;
-  TPML_DIGEST_VALUES               TcgPcrEvent2Digest;
-  EFI_TCG2_EVENT_ALGORITHM_BITMAP  TpmHashAlgorithmBitmap;
-  UINT32                           ActivePcrBanks;
-  UINT32                           *BufferPtr;
-  UINT32                           DigestListBinSize;
+  TPML_DIGEST_VALUES  Digest;
+  HASH_HANDLE         *HashCtx;
+  UINTN               Index;
+  EFI_STATUS          Status;
+  UINT32              HashMask;
+  TPML_DIGEST_VALUES  TcgPcrEvent2Digest;
+  // EFI_TCG2_EVENT_ALGORITHM_BITMAP  TpmHashAlgorithmBitmap; // MU_CHANGE
+  // UINT32                           ActivePcrBanks; // MU_CHANGE
+  UINT32  *BufferPtr;
+  UINT32  DigestListBinSize;
 
   if (mHashInterfaceCount == 0) {
     return EFI_UNSUPPORTED;
@@ -224,7 +243,8 @@ HashCompleteAndExtend (
 
   for (Index = 0; Index < mHashInterfaceCount; Index++) {
     HashMask = Tpm2GetHashMaskFromGuid (&mHashInterface[Index].HashGuid);
-    if ((HashMask & PcdGet32 (PcdTpm2HashMask)) != 0) {
+    // MU_CHANGE
+    if ((HashMask & mActivePcrBanks) != 0) {
       mHashInterface[Index].HashUpdate (HashCtx[Index], DataToHash, DataToHashLen);
       mHashInterface[Index].HashFinal (HashCtx[Index], &Digest);
       Tpm2SetHashToDigestList (DigestList, &Digest);
@@ -239,11 +259,15 @@ HashCompleteAndExtend (
                DigestList
                );
   } else {
+    // MU_CHANGE - [BEGIN]
+ #if 0
     Status = Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashAlgorithmBitmap, &ActivePcrBanks);
     ASSERT_EFI_ERROR (Status);
     ActivePcrBanks = ActivePcrBanks & mSupportedHashMaskCurrent;
+ #endif
+    // MU_CHANGE - [END]
     ZeroMem (&TcgPcrEvent2Digest, sizeof (TcgPcrEvent2Digest));
-    BufferPtr         = Tpm2CopyDigestListToBuffer (&TcgPcrEvent2Digest, DigestList, ActivePcrBanks);
+    BufferPtr         = Tpm2CopyDigestListToBuffer (&TcgPcrEvent2Digest, DigestList, mActivePcrBanks);
     DigestListBinSize = (UINT32)((UINT8 *)BufferPtr - (UINT8 *)&TcgPcrEvent2Digest);
 
     //
@@ -317,15 +341,18 @@ RegisterHashInterfaceLib (
   IN HASH_INTERFACE  *HashInterface
   )
 {
-  UINTN       Index;
-  UINT32      HashMask;
-  UINT32      Tpm2HashMask;
+  UINTN   Index;
+  UINT32  HashMask;
+  // UINT32      Tpm2HashMask; // MU_CHANGE
   EFI_STATUS  Status;
 
   //
   // Check allow
   //
-  HashMask     = Tpm2GetHashMaskFromGuid (&HashInterface->HashGuid);
+  HashMask = Tpm2GetHashMaskFromGuid (&HashInterface->HashGuid);
+
+  // MU_CHANGE - [BEGIN]
+ #if 0
   Tpm2HashMask = PcdGet32 (PcdTpm2HashMask);
 
   if ((Tpm2HashMask != 0) &&
@@ -334,7 +361,11 @@ RegisterHashInterfaceLib (
     return EFI_UNSUPPORTED;
   }
 
-  if (mHashInterfaceCount >= sizeof (mHashInterface)/sizeof (mHashInterface[0])) {
+ #endif
+  // MU_CHANGE - [END]
+
+  if (mHashInterfaceCount >= ARRAY_SIZE (mHashInterface)) {
+    // MU_CHANGE
     return EFI_OUT_OF_RESOURCES;
   }
 
