@@ -470,10 +470,14 @@ SmmuV3LogErrors (
 /**
   Register GIC interrupt sources for SmmuV3 EVTQ and GERR interrupts.
 
+  An IRQ number of 0 means the interrupt is not wired for this SMMU, so it is
+  skipped instead of registered.
+
   @param[in] GicInterrupt  Pointer to the GIC interrupt protocol.
   @param[in] SmmuInfo      Pointer to the SMMU_INFO structure.
 
-  @retval EFI_SUCCESS           The interrupt sources were registered successfully.
+  @retval EFI_SUCCESS           The interrupt sources were registered successfully,
+                                or skipped because their IRQ number is 0.
   @retval EFI_INVALID_PARAMETER The GicInterrupt or SmmuInfo is NULL.
 **/
 EFI_STATUS
