@@ -967,10 +967,14 @@ SmmuV3RegisterInterruptSource (
 /**
   Register GIC interrupt sources for SmmuV3 EVTQ and GERR interrupts.
 
+  An IRQ number of 0 means the interrupt is not wired for this SMMU, so it is
+  skipped instead of registered.
+
   @param[in] GicInterrupt  Pointer to the GIC interrupt protocol.
   @param[in] SmmuInfo      Pointer to the SMMU_INFO structure.
 
-  @retval EFI_SUCCESS            The interrupt sources were registered successfully.
+  @retval EFI_SUCCESS            The interrupt sources were registered successfully,
+                                 or skipped because their IRQ number is 0.
   @retval EFI_INVALID_PARAMETER  GicInterrupt or SmmuInfo is NULL.
 **/
 EFI_STATUS
@@ -986,16 +990,24 @@ SmmuV3RegisterGicIsr (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = SmmuV3RegisterInterruptSource (GicInterrupt, SmmuInfo->EvtqIrqNum);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Error registering EVTQ interrupt\n", __func__));
-    return Status;
+  if (SmmuInfo->EvtqIrqNum == 0) {
+    DEBUG ((DEBUG_INFO, "%a: EVTQ IRQ number is 0 for SmmuBase=0x%llx, skipping EVTQ interrupt registration\n", __func__, SmmuInfo->SmmuBase));
+  } else {
+    Status = SmmuV3RegisterInterruptSource (GicInterrupt, SmmuInfo->EvtqIrqNum);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: Error registering EVTQ interrupt\n", __func__));
+      return Status;
+    }
   }
 
-  Status = SmmuV3RegisterInterruptSource (GicInterrupt, SmmuInfo->GerrIrqNum);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Error registering GERR interrupt\n", __func__));
-    return Status;
+  if (SmmuInfo->GerrIrqNum == 0) {
+    DEBUG ((DEBUG_INFO, "%a: GERR IRQ number is 0 for SmmuBase=0x%llx, skipping GERR interrupt registration\n", __func__, SmmuInfo->SmmuBase));
+  } else {
+    Status = SmmuV3RegisterInterruptSource (GicInterrupt, SmmuInfo->GerrIrqNum);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: Error registering GERR interrupt\n", __func__));
+      return Status;
+    }
   }
 
   return EFI_SUCCESS;

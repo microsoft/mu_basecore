@@ -589,7 +589,8 @@ the moment they happen instead of being noticed only on the next mapping call:
    the producer pointer in `mGicInterrupt`. If the protocol isn't present, IRQ hookup is skipped (non-fatal) - faults
    will only be visible when a later mapping call invokes `SmmuV3LogErrors` itself.
 2. Inside `SmmuV3Configure` (per enabled SMMU), `SmmuV3RegisterGicIsr` registers both `EvtqIrqNum` and `GerrIrqNum`
-   with `SmmuV3IsrHandler` via `SmmuV3RegisterInterruptSource`. For each source it:
+   with `SmmuV3IsrHandler` via `SmmuV3RegisterInterruptSource`. An IRQ number of `0` is treated as "not wired": that
+   source is skipped with an info log and the other one is still registered. For each non-zero source it:
    - `RegisterInterruptSource (Source, SmmuV3IsrHandler)`
    - `SetTriggerType (Source, EDGE_RISING)`
    - `EnableInterruptSource (Source)` if not already enabled
