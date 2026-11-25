@@ -25,6 +25,7 @@
   BaseCryptLibUnitTests.c
   TestBaseCryptLib.h
   CryptoOpCapabilityTests.c
+  Pkcs7LengthTestData.h
   HashTests.c
   HashAllByGuidTests.c
   HmacTests.c
