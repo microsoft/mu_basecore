@@ -929,6 +929,36 @@ UsbHubRelease (
   return EFI_SUCCESS;
 }
 
+// MU_CHANGE [BEGIN]
+
+/**
+  This event callback is repeatedly signalled at CALLBACK until the minimum
+  number of enumeration polling attempts has been reached.
+
+  @param  Event                 The event that is triggered.
+  @param  Context               The context to the event.
+
+**/
+VOID
+EFIAPI
+UsbRootHubEnumerationDelay (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  USB_INTERFACE  *HubIf;
+
+  HubIf = (USB_INTERFACE *)Context;
+  if (HubIf->PollCount < USB_ENUM_POLL_MINIMUM_ATTEMPTS) {
+    gBS->SignalEvent (Event);
+  } else {
+    gBS->CloseEvent (Event);
+    DEBUG ((DEBUG_VERBOSE, "[%a] USB root hub enumeration delay end\n", __func__));
+  }
+}
+
+// MU_CHANGE [END]
+
 /**
   Initialize the interface for root hub.
 
@@ -1001,23 +1031,29 @@ UsbRootHubInit (
     // MU_CHANGE [BEGIN]
   } else {
     // MU_CHANGE Add USB Hub Enumeration delay
-    EFI_TPL  OldTpl;
 
-    OldTpl = gBS->RaiseTPL (TPL_HIGH_LEVEL);
-    gBS->RestoreTPL (TPL_APPLICATION);
+    // Create an event and signal it repeatedly until the minimum number of enumeration polls is reached.
+    // This prevents the TPL from dropping to APPLICATION and proceeding with boot until slower devices
+    // have a chance to enumerate.
+    EFI_EVENT  DelayEvent;
+    DEBUG ((DEBUG_VERBOSE, "[%a] USB root hub enumeration delay start\n", __func__));
+    Status = gBS->CreateEvent (
+                    EVT_NOTIFY_SIGNAL,
+                    TPL_CALLBACK,
+                    UsbRootHubEnumerationDelay,
+                    HubIf,
+                    &DelayEvent
+                    );
 
-    while (HubIf->PollCount < USB_ENUM_POLL_MINIMUM_ATTEMPTS) {
-      // wait for a minimum of USB_ENUM_POLL_MINIMUM_ATTEMPTS * (USB_ROOTHUB_POLL_INTERVAL 100 ms)
-      // with the asynchronous periodic timer interrupt that checks for hub enumeration
-      // and updates PollCount on each timer trigger
+    if (EFI_ERROR (Status)) {
+      gBS->CloseEvent (HubIf->HubNotify);
+      return Status;
     }
 
-    if (OldTpl > TPL_APPLICATION) {
-      gBS->RaiseTPL (OldTpl);
-    }
-
-    // MU_CHANGE [END]
+    gBS->SignalEvent (DelayEvent);
   }
+
+  // MU_CHANGE [END]
 
   return Status;
 }
