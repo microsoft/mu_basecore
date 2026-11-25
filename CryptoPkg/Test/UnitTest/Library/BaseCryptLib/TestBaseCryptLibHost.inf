@@ -33,6 +33,7 @@
   RsaPkcs7Tests.c
   Pkcs5Pbkdf2Tests.c
   AuthenticodeTests.c
+  PerformanceBenchmarkTests.c
   AuthenticodeVerifyExTests.c
   TrustAnchorTests.c
   AuthenticodeHashAlgorithmTests.c
@@ -63,6 +64,7 @@
   BaseLib
   DebugLib
   BaseCryptLib
+  TimerLib
   UnitTestLib
   MmServicesTableLib
   SynchronizationLib
