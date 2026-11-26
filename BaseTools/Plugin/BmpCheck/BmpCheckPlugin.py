@@ -145,7 +145,7 @@ class BmpCheckPlugin(IUefiBuildPlugin):
                 # now look for images in each file of this FV
                 for fv_file_name in FV_files:
                     fv_file = FV_files[fv_file_name]
-                    if fv_file["type"].upper() != 'FREEFORM':
+                    if fv_file["type"].upper() != 'FREEFORM' or 'RAW' not in fv_file:
                         continue
                     fv_file_raw = fv_file['RAW']
                     fv_file_raw_list = []
