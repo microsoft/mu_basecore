@@ -81,14 +81,11 @@ UsbIoControlTransfer (
 
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoControlTransfer No media\n"));
     goto ON_EXIT;
   }
-
-  // MU_CHANGE [END]
 
   RequestedDataLength = DataLength;
   Status              = UsbHcControlTransfer (
@@ -188,11 +185,15 @@ UsbIoControlTransfer (
     DEBUG ((DEBUG_INFO, "UsbIoControlTransfer: configure changed!!! Do NOT use old UsbIo!!!\n"));
 
     if (Dev->ActiveConfig != NULL) {
-      UsbRemoveConfig (Dev);
+      Status = UsbRemoveConfig (Dev);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "UsbIoControlTransfer: configuration teardown failed - %r\n", Status));
+        goto ON_EXIT;
+      }
     }
 
     if (Request->Value != 0) {
-      Status = UsbSelectConfig (Dev, (UINT8)Request->Value);
+      Status = UsbSelectConfig (Dev, (UINT8)Request->Value, TRUE);
     }
 
     //
@@ -273,7 +274,6 @@ UsbIoBulkTransfer (
 
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoBulkTransfer No media\n"));
@@ -373,7 +373,6 @@ UsbIoSyncInterruptTransfer (
 
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoSyncInterruptTransfer No media\n"));
@@ -456,14 +455,12 @@ UsbIoAsyncInterruptTransfer (
   OldTpl = gBS->RaiseTPL (USB_BUS_TPL);
   UsbIf  = USB_INTERFACE_FROM_USBIO (This);
   Dev    = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
-  if ((Dev->Connected == FALSE) && (IsNewTransfer == TRUE)) {
+  if (!Dev->Connected && IsNewTransfer) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoAsyncInterruptTransfer No media\n"));
     goto ON_EXIT;
   }
 
-  // MU_CHANGE [END]
   EpDesc = UsbGetEndpointDesc (UsbIf, Endpoint);
 
   if ((EpDesc == NULL) || (USB_ENDPOINT_TYPE (&EpDesc->Desc) != USB_ENDPOINT_INTERRUPT)) {
@@ -575,17 +572,14 @@ UsbIoGetDeviceDescriptor (
 
   OldTpl = gBS->RaiseTPL (USB_BUS_TPL);
 
-  UsbIf = USB_INTERFACE_FROM_USBIO (This);
-  Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
+  UsbIf  = USB_INTERFACE_FROM_USBIO (This);
+  Dev    = UsbIf->Device;
   Status = EFI_SUCCESS;
 
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
-
-  // MU_CHANGE [END]
 
   CopyMem (Descriptor, &Dev->DevDesc->Desc, sizeof (EFI_USB_DEVICE_DESCRIPTOR));
 
@@ -626,7 +620,6 @@ UsbIoGetActiveConfigDescriptor (
 
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
@@ -673,8 +666,7 @@ UsbIoGetInterfaceDescriptor (
 
   OldTpl = gBS->RaiseTPL (USB_BUS_TPL);
 
-  UsbIf = USB_INTERFACE_FROM_USBIO (This);
-  // MU_CHANGE [BEGIN]
+  UsbIf  = USB_INTERFACE_FROM_USBIO (This);
   Dev    = UsbIf->Device;
   Status = EFI_SUCCESS;
 
@@ -682,8 +674,6 @@ UsbIoGetInterfaceDescriptor (
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
-
-  // MU_CHANGE [END]
 
   CopyMem (Descriptor, &(UsbIf->IfSetting->Desc), sizeof (EFI_USB_INTERFACE_DESCRIPTOR));
 
@@ -719,8 +709,7 @@ UsbIoGetEndpointDescriptor (
 
   OldTpl = gBS->RaiseTPL (USB_BUS_TPL);
 
-  UsbIf = USB_INTERFACE_FROM_USBIO (This);
-  // MU_CHANGE [BEGIN]
+  UsbIf  = USB_INTERFACE_FROM_USBIO (This);
   Dev    = UsbIf->Device;
   Status = EFI_SUCCESS;
 
@@ -728,8 +717,6 @@ UsbIoGetEndpointDescriptor (
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
-
-  // MU_CHANGE [END]
 
   if ((Descriptor == NULL) || (Index > 15)) {
     // MU_CHANGE [BEGIN]
@@ -781,17 +768,14 @@ UsbIoGetSupportedLanguages (
 
   OldTpl = gBS->RaiseTPL (USB_BUS_TPL);
 
-  UsbIf = USB_INTERFACE_FROM_USBIO (This);
-  Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
+  UsbIf  = USB_INTERFACE_FROM_USBIO (This);
+  Dev    = UsbIf->Device;
   Status = EFI_SUCCESS;
 
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
-
-  // MU_CHANGE [END]
 
   *LangIDTable = Dev->LangId;
   *TableSize   = (UINT16)(Dev->TotalLangId * sizeof (UINT16));
@@ -838,13 +822,10 @@ UsbIoGetStringDescriptor (
 
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
-
-  // MU_CHANGE [END]
 
   //
   // Check whether language ID is supported
@@ -896,8 +877,256 @@ ON_EXIT:
 }
 
 /**
+  Compare the default function and endpoints before retaining an interface.
+
+  @param  UsbIf         The USB IO instance.
+  @param  IfDesc        The language ID of the string to retrieve.
+
+  @retval TRUE
+  @retval FALSE
+
+**/
+STATIC
+BOOLEAN
+UsbInterfaceIsCompatible (
+  IN USB_INTERFACE       *UsbIf,
+  IN USB_INTERFACE_DESC  *IfDesc
+  )
+{
+  USB_INTERFACE_SETTING  *OldSetting;
+  USB_INTERFACE_SETTING  *Setting;
+  UINTN                  Index;
+
+  if (UsbIf->IsHub) {
+    return FALSE;
+  }
+
+  OldSetting = NULL;
+  for (Index = 0; Index < UsbIf->IfDesc->NumOfSetting; Index++) {
+    if ((UsbIf->IfDesc->Settings[Index] != NULL) &&
+        (UsbIf->IfDesc->Settings[Index]->Desc.AlternateSetting == 0))
+    {
+      OldSetting = UsbIf->IfDesc->Settings[Index];
+      break;
+    }
+  }
+
+  Setting = IfDesc->Settings[IfDesc->ActiveIndex];
+  if ((OldSetting == NULL) ||
+      (Setting->Desc.InterfaceNumber != OldSetting->Desc.InterfaceNumber) ||
+      (Setting->Desc.InterfaceClass != OldSetting->Desc.InterfaceClass) ||
+      (Setting->Desc.InterfaceSubClass != OldSetting->Desc.InterfaceSubClass) ||
+      (Setting->Desc.InterfaceProtocol != OldSetting->Desc.InterfaceProtocol) ||
+      (Setting->Desc.NumEndpoints != OldSetting->Desc.NumEndpoints))
+  {
+    return FALSE;
+  }
+
+  for (Index = 0; Index < Setting->Desc.NumEndpoints; Index++) {
+    if (CompareMem (
+          &Setting->Endpoints[Index]->Desc,
+          &OldSetting->Endpoints[Index]->Desc,
+          sizeof (EFI_USB_ENDPOINT_DESCRIPTOR)
+          ) != 0)
+    {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+  Refresh compatible interfaces, or disconnect and replace a changed personality
+  without connecting drivers. The caller must coordinate safe consumer teardown.
+
+  @param  Dev                   The device to reconfigure.
+  @param  CanReplace            The caller's TPL permits synchronous teardown.
+
+  @retval EFI_SUCCESS           The configuration and descriptors are refreshed.
+  @retval EFI_NOT_READY         Changed interfaces cannot be replaced during binding.
+  @retval Others                Failed to read descriptors or configure the device.
+
+**/
+STATIC
+EFI_STATUS
+UsbResetConfig (
+  IN USB_DEVICE  *Dev,
+  IN BOOLEAN     CanReplace
+  )
+{
+  USB_DEVICE             NewDev;
+  USB_DEVICE_DESC        *OldDesc;
+  USB_CONFIG_DESC        *ConfigDesc;
+  USB_INTERFACE_DESC     *IfDesc;
+  USB_INTERFACE_SETTING  *Setting;
+  USB_INTERFACE          *UsbIf;
+  EFI_STATUS             Status;
+  UINTN                  Index;
+  UINTN                  SettingIndex;
+  UINT8                  Config;
+  BOOLEAN                Replace;
+
+  //
+  // Build into a temporary device so failures leave all cached pointers valid.
+  //
+  CopyMem (&NewDev, Dev, sizeof (NewDev));
+  NewDev.DevDesc     = NULL;
+  NewDev.IsSSDev     = FALSE;
+  NewDev.TotalLangId = 0;
+  ZeroMem (NewDev.LangId, sizeof (NewDev.LangId));
+
+  Status = UsbGetMaxPacketSize0 (&NewDev);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "UsbResetConfig: failed to get max packet size - %r\n", Status));
+    return Status;
+  }
+
+  Status = UsbBuildDescTable (&NewDev);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "UsbResetConfig: failed to build descriptor table - %r\n", Status));
+    goto ON_ERROR;
+  }
+
+  Replace = (BOOLEAN)(
+                      (CompareMem (&NewDev.DevDesc->Desc, &Dev->DevDesc->Desc, sizeof (EFI_USB_DEVICE_DESCRIPTOR)) != 0)
+                      );
+  //
+  // Select and validate fresh descriptors even when replacement is already required.
+  //
+  Config     = Dev->ActiveConfig->Desc.ConfigurationValue;
+  ConfigDesc = NULL;
+  for (Index = 0; Index < NewDev.DevDesc->Desc.NumConfigurations; Index++) {
+    if ((NewDev.DevDesc->Configs[Index] != NULL) &&
+        (NewDev.DevDesc->Configs[Index]->Desc.ConfigurationValue == Config))
+    {
+      ConfigDesc = NewDev.DevDesc->Configs[Index];
+      break;
+    }
+  }
+
+  if ((ConfigDesc == NULL) && (NewDev.DevDesc->Desc.NumConfigurations != 0)) {
+    ConfigDesc = NewDev.DevDesc->Configs[0];
+    Replace    = TRUE;
+  }
+
+  Status = EFI_DEVICE_ERROR;
+  if ((ConfigDesc == NULL) ||
+      (ConfigDesc->Desc.NumInterfaces == 0) ||
+      (ConfigDesc->Desc.NumInterfaces > USB_MAX_INTERFACE))
+  {
+    DEBUG ((DEBUG_ERROR, "UsbResetConfig: incompatible configuration after reset\n"));
+    goto ON_ERROR;
+  }
+
+  Replace = (BOOLEAN)(Replace ||
+                      (ConfigDesc->Desc.NumInterfaces != Dev->ActiveConfig->Desc.NumInterfaces));
+  Config = ConfigDesc->Desc.ConfigurationValue;
+
+  for (Index = 0; Index < ConfigDesc->Desc.NumInterfaces; Index++) {
+    IfDesc = ConfigDesc->Interfaces[Index];
+    if (IfDesc == NULL) {
+      DEBUG ((DEBUG_ERROR, "UsbResetConfig: missing interface %d\n", (UINT32)Index));
+      goto ON_ERROR;
+    }
+
+    //
+    // SET_CONFIGURATION selects alternate setting zero, not the old setting.
+    //
+    Setting = NULL;
+    for (SettingIndex = 0; SettingIndex < IfDesc->NumOfSetting; SettingIndex++) {
+      Setting = IfDesc->Settings[SettingIndex];
+      if ((Setting != NULL) && (Setting->Desc.AlternateSetting == 0)) {
+        break;
+      }
+    }
+
+    if ((Setting == NULL) ||
+        (SettingIndex == IfDesc->NumOfSetting) ||
+        (Setting->Desc.InterfaceNumber != Index) ||
+        (Setting->Desc.InterfaceClass == USB_HUB_CLASS_CODE))
+    {
+      DEBUG ((DEBUG_ERROR, "UsbResetConfig: incompatible interface %d after reset\n", (UINT32)Index));
+      goto ON_ERROR;
+    }
+
+    IfDesc->ActiveIndex = SettingIndex;
+    UsbIf               = Dev->Interfaces[Index];
+    if (!Replace && (UsbIf != NULL) && !UsbInterfaceIsCompatible (UsbIf, IfDesc)) {
+      Replace = TRUE;
+    }
+  }
+
+  if (Replace) {
+    if (Dev->BindingInProgress || !CanReplace) {
+      Status = EFI_NOT_READY;
+      DEBUG ((DEBUG_ERROR, "UsbResetConfig: changed personality requires coordinated teardown outside binding\n"));
+      goto ON_ERROR;
+    }
+
+    //
+    // Keep descriptors alive until every old USB I/O and device path is removed.
+    //
+    Dev->Connected = FALSE;
+    Status         = UsbRemoveConfig (Dev);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "UsbResetConfig: old interface teardown failed - %r\n", Status));
+      goto ON_ERROR;
+    }
+  }
+
+  Status = UsbSetConfig (&NewDev, Config);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "UsbResetConfig: failed to set configuration - %r\n", Status));
+    goto ON_ERROR;
+  }
+
+  OldDesc           = Dev->DevDesc;
+  Dev->DevDesc      = NewDev.DevDesc;
+  NewDev.DevDesc    = NULL;
+  Dev->ActiveConfig = ConfigDesc;
+  Dev->MaxPacket0   = NewDev.MaxPacket0;
+  Dev->IsSSDev      = NewDev.IsSSDev;
+  Dev->TotalLangId  = NewDev.TotalLangId;
+  CopyMem (Dev->LangId, NewDev.LangId, sizeof (Dev->LangId));
+
+  for (Index = 0; Index < ConfigDesc->Desc.NumInterfaces; Index++) {
+    UsbIf = Dev->Interfaces[Index];
+    if (UsbIf != NULL) {
+      UsbIf->IfDesc    = ConfigDesc->Interfaces[Index];
+      UsbIf->IfSetting = UsbIf->IfDesc->Settings[UsbIf->IfDesc->ActiveIndex];
+    }
+  }
+
+  UsbFreeDevDesc (OldDesc);
+  if (Replace) {
+    Status = UsbSelectConfig (Dev, Config, FALSE);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "UsbResetConfig: replacement publication failed - %r\n", Status));
+      return Status;
+    }
+
+    Dev->Connected = TRUE;
+  }
+
+  return EFI_SUCCESS;
+
+ON_ERROR:
+  if (NewDev.DevDesc != NULL) {
+    UsbFreeDevDesc (NewDev.DevDesc);
+  }
+
+  return Status;
+}
+
+/**
   Reset the device, then if that succeeds, reconfigure the
   device with its address and current active configuration.
+  Refresh compatible interfaces in place. A changed personality requires caller-
+  coordinated driver disconnection and invalidates old USB I/O pointers.
+  Replacement publishes interfaces without connecting drivers. It is rejected
+  during bus-owned binding or above TPL_CALLBACK. Failures leave the device
+  offline; no automatic recovery or reconnect is scheduled.
 
   @param  This                   The USB IO instance.
 
@@ -911,20 +1140,25 @@ UsbIoPortReset (
   IN EFI_USB_IO_PROTOCOL  *This
   )
 {
-  USB_INTERFACE    *UsbIf;
-  USB_INTERFACE    *HubIf;
-  USB_DEVICE       *Dev;
-  EFI_TPL          OldTpl;
-  EFI_STATUS       Status;
-  UINT8            DevAddress;
-  UINT8            Config;
-  USB_DEVICE_DESC  *DevDesc;
+  USB_INTERFACE  *UsbIf;
+  USB_INTERFACE  *HubIf;
+  USB_DEVICE     *Dev;
+  EFI_TPL        OldTpl;
+  EFI_STATUS     Status;
+  UINT8          DevAddress;
+  BOOLEAN        OwnsResetGuard;
 
-  OldTpl = gBS->RaiseTPL (USB_BUS_TPL);
+  OwnsResetGuard = FALSE;
+  OldTpl         = gBS->RaiseTPL (USB_BUS_TPL);
 
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
+  if (Dev->ResetInProgress) {
+    Status = EFI_NOT_READY;
+    DEBUG ((DEBUG_ERROR, "UsbIoPortReset: reset already active\n"));
+    goto ON_EXIT;
+  }
+
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoPortReset No media\n"));
@@ -937,8 +1171,10 @@ UsbIoPortReset (
     goto ON_EXIT;
   }
 
-  HubIf  = Dev->ParentIf;
-  Status = HubIf->HubApi->ResetPort (HubIf, Dev->ParentPort);
+  Dev->ResetInProgress = TRUE;
+  OwnsResetGuard       = TRUE;
+  HubIf                = Dev->ParentIf;
+  Status               = HubIf->HubApi->ResetPort (HubIf, Dev->ParentPort);
 
   if (EFI_ERROR (Status)) {
     DEBUG ((
@@ -994,47 +1230,22 @@ UsbIoPortReset (
   // is in CONFIGURED state.
   //
   if (Dev->ActiveConfig != NULL) {
-    Status = UsbGetMaxPacketSize0 (Dev);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "UsbIoPortReset: Failed to get max packet size - %r\n", Status));
-    }
-
-    // Expect the Device Descriptor should not be changed.
-    // UEFI spec 2.11 Ch. 17.2.18 EFI_USB_IO_PROTOCOL.UsbPortReset
-    // This Reset function does not change the bus topology.
-
-    // Save the device descriptor before resetting and then restore it after build descriptor table
-    DevDesc      = Dev->DevDesc;
-    Dev->DevDesc = NULL;
-
-    Status = UsbBuildDescTable (Dev);
-
-    if (Dev->DevDesc != NULL) {
-      UsbFreeDevDesc (Dev->DevDesc);
-    }
-
-    Dev->DevDesc = DevDesc;
-
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "UsbIoPortReset: Failed to build descriptor table - %r\n", Status));
-      goto ON_EXIT;
-    }
-
-    Config = Dev->DevDesc->Configs[0]->Desc.ConfigurationValue;
-
-    Status = UsbSetConfig (Dev, Config);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "UsbIoPortReset: failed to set configure for device %d - %r\n",
-        Dev->Address,
-        Status
-        ));
-    }
+    Status = UsbResetConfig (Dev, (BOOLEAN)(OldTpl <= TPL_CALLBACK));
   }
 
 ON_EXIT:
+  if (OwnsResetGuard && EFI_ERROR (Status)) {
+    Dev->Connected = FALSE;
+  }
+
   gBS->RestoreTPL (OldTpl);
+  //
+  // A rejected nested call must not clear the outer invocation's reset guard.
+  //
+  if (OwnsResetGuard) {
+    Dev->ResetInProgress = FALSE;
+  }
+
   return Status;
 }
 
@@ -1167,6 +1378,7 @@ UsbBusBuildProtocol (
   RootHub->NumOfInterface = 1;
   RootHub->Interfaces[0]  = RootIf;
   RootHub->Tier           = 0;
+  RootHub->Connected      = TRUE;
   RootIf->Signature       = USB_INTERFACE_SIGNATURE;
   RootIf->Device          = RootHub;
   RootIf->DevicePath      = UsbBus->DevicePath;

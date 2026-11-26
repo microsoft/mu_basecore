@@ -123,6 +123,7 @@ UsbSelectSetting (
 
   @param  Device                The device to select configuration.
   @param  ConfigIndex           The index of the configuration ( != 0).
+  @param  ConnectDrivers        Whether to connect function drivers.
 
   @retval EFI_NOT_FOUND         There is no configuration with the index.
   @retval EFI_OUT_OF_RESOURCES  Failed to allocate resource.
@@ -132,7 +133,23 @@ UsbSelectSetting (
 EFI_STATUS
 UsbSelectConfig (
   IN USB_DEVICE  *Device,
-  IN UINT8       ConfigIndex
+  IN UINT8       ConfigIndex,
+  IN BOOLEAN     ConnectDrivers
+  );
+
+/**
+  Connect the USB interface with its driver. EFI USB bus will
+  create a USB interface for each separate interface descriptor.
+
+  @param  UsbIf             The interface to connect driver to.
+
+  @return EFI_SUCCESS       Interface is managed by some driver.
+  @return Others            Failed to locate a driver for this interface.
+
+**/
+EFI_STATUS
+UsbConnectDriver (
+  IN USB_INTERFACE  *UsbIf
   );
 
 /**
