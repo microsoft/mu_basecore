@@ -146,3 +146,81 @@ mTcgDxeData.AcpiEventLogAreaStruct[Index].Laml =
 
 Truncation can be detected by walking the region and inspecting the last
 entry for the `"TCG Event Log Truncated"` payload.
+
+## SP800-155 PlatformId Events
+
+Tcg2Dxe has dedicated handling for the **SP800-155 PlatformId Event**, an
+`EV_NO_ACTION` measurement log entry that carries platform identification
+data (manufacturer, model, firmware version, reference-measurement URI, etc.)
+so an attestation verifier can identify which platform produced the
+measurements that follow it in the log.
+
+### Background: Why the SP800-155 Name Persists
+
+The event type is named after
+[NIST SP 800-155, *BIOS Integrity Measurement Guidelines*](https://csrc.nist.gov/pubs/sp/800/155/ipd),
+which defined the original notion of a platform-identity measurement record.
+That NIST draft was **withdrawn/retired** and never advanced past the initial
+public draft, so it is no longer a normative reference on its own.
+
+However, the [TCG PC Client Platform Firmware Profile (PFP) Specification](https://trustedcomputinggroup.org/resource/pc-client-specific-platform-firmware-profile-specification/)
+adopted the same event and still defines it normatively:
+
+- `TCG_Sp800_155_PlatformId_Event2` — signature `"SP800-155 Event2"`
+- `TCG_Sp800_155_PlatformId_Event3` — signature `"SP800-155 Event3"`
+
+Because the PFP is the governing spec for firmware event logs, tooling and
+attestation stacks (OS-side TPM parsers, remote-attestation verifiers, CRTM
+reference implementations) still look for these entries. That is why the
+handling code remains in Tcg2Dxe even though the originating NIST document
+is retired — the code is here to keep the driver **PFP-compliant**, not to
+comply with the retired NIST draft directly.
+
+### How Tcg2Dxe Handles the Event
+
+The 800-155 events are supplied to Tcg2Dxe by an earlier boot phase through
+GUIDed HOBs identified by `gTcg800155PlatformIdEventHobGuid`. During
+`SetupEventLog`, Tcg2Dxe:
+
+1. Logs the `TCG_EfiSpecIdEvent` header first (required to be the first entry
+   in a Crypto Agile log per PFP 9.2).
+2. Records the current end-of-log offset into
+   `EventLogAreaStruct->Next800155EventOffset`. This marks the slot where
+   800-155 events belong per PFP ordering rules — immediately after the
+   SpecId event and before any measured events.
+3. Walks every `gTcg800155PlatformIdEventHobGuid` HOB and logs each one as
+   a `TCG_PCR_EVENT2` with `EventType = EV_NO_ACTION`.
+
+### Insertion at the Reserved Offset
+
+`TcgCommLogEvent` uses `Is800155Event` to detect an incoming 800-155 event
+(matches `EV_NO_ACTION` + one of the SP800-155 signatures). When one is
+detected and `Next800155EventOffset != 0`, the driver does **not** append the
+event at the tail of the log. Instead it:
+
+1. Shifts everything from `Next800155EventOffset` onward forward by
+   `NewLogSize` bytes to open a gap.
+2. Copies the new 800-155 header + payload into that gap.
+3. Advances `Next800155EventOffset`, `LastEvent`, and `EventLogSize` by
+   `NewLogSize`.
+
+This preserves the PFP-required ordering (all 800-155 platform-identity
+events appear as a contiguous block near the top of the log) even when an
+800-155 event is produced later than the first measured event, or arrives
+after the log has already been partially populated.
+
+If `Next800155EventOffset == 0` (for example, the FinalEventLog, which does
+not reserve an insertion slot — see the `SetupEventLog` initialization
+setting `FinalEventLogAreaStruct[Index].Next800155EventOffset = 0`), the
+800-155 event is silently dropped rather than appended out of order.
+
+### Practical Notes
+
+- Platforms that want their 800-155 identity in the log must produce
+  `gTcg800155PlatformIdEventHobGuid` HOBs in a pre-DXE phase (SEC or PEI),
+  since the HOB list is finalized at DXE handoff and Tcg2Dxe consumes these
+  HOBs during `SetupEventLog`.
+- Removing the 800-155 handling would break PFP conformance and prevent
+  attestation clients from tying measurements to a specific platform SKU,
+  so the code is intentionally retained despite the retirement of the NIST
+  draft it is named after.
